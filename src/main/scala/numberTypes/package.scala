@@ -9,7 +9,7 @@ type Id[A] = A
 type Fix[F[_]] = Algebra[F] ~> Id
 
 infix type ~[A, B] = (
-  to: A => B,
+  to:   A => B,
   from: B => A
 )
 
@@ -20,4 +20,18 @@ object Iso extends LowPriority:
 trait LowPriority:
   given convFromIso2: [A, B] =>(iso: A ~ B) => Conversion[B, A] = new:
     def apply(b: B) = iso.from(b)
+
+sealed trait DepType[Tag, A]:
+  val a: A
+  type B
+
+type Dep[Tag] = [A] =>> DepType[Tag, A]#B
+
+val a = new DepType[Nothing, Int]:
+  val a = 42
+  type B = String
+
+val b = "sas": a.B
+
+
 
