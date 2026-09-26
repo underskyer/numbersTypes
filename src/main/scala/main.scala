@@ -1,22 +1,12 @@
+import numberTypes.*
+
 @main
 def main() = {
 
-  infix type ×[A, B] = (A, B)
-  infix type +[A, B] = A Either B
-  infix type <->[A, B] = (
-    to:   A => B,
-    from: B => A
-  )
-  object Iso extends LowPriority:
-    given convFromIso1: [A, B] =>(iso: A <-> B) => Conversion[A, B] = new:
-      def apply(a: A) = iso.to(a)
 
-  trait LowPriority:
-    given convFromIso2: [A, B] =>(iso: A <-> B) => Conversion[B, A] = new:
-      def apply(b: B) = iso.from(b)
+  
 
-
-  given commutation: [A, B] => (A × B) <-> (B × A) = (
+  given commutation: [A, B] => (A × B) ~ (B × A) = (
     to   = (a, b) => (b, a),
     from = (b, a) => (a, b),
   )
