@@ -1,10 +1,7 @@
 import numberTypes.*
 
 @main
-def main() = {
-
-
-  
+def main() =
 
   given commutation: [A, B] => (A × B) ~ (B × A) = (
     to   = (a, b) => (b, a),
@@ -31,4 +28,7 @@ def main() = {
   //given intStr: Int =:= String =
 
   println(summon[Int =:= Int] == summon[String =:= String])
-}
+
+
+  //wellFounded.test
+  indNatural.test

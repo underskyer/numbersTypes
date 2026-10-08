@@ -31,7 +31,7 @@ val a = new DepType[Nothing, Int]:
   val a = 42
   type B = String
 
-val b = "sas": a.B
+val b: a.B = "sas"
 
 
 
