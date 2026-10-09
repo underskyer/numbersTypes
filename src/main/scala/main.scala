@@ -13,7 +13,7 @@ def main() =
   import Iso.given
 
   val a: Int × String = 42 -> "jndtn"
-  println(func(a))
+  //println(func(a))
 
   type Magma[A] = A + Magma[A] × Magma[A]
 
@@ -27,8 +27,10 @@ def main() =
 
   //given intStr: Int =:= String =
 
-  println(summon[Int =:= Int] == summon[String =:= String])
+  //println(summon[Int =:= Int] == summon[String =:= String])
 
-
-  //wellFounded.test
+  natural.test
+  recNatural.test
+  chirchNatural.test
   indNatural.test
+  wellFounded.test

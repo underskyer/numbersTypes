@@ -121,7 +121,7 @@ object wellFounded:
 //    println(s"Число: $long")
 
     val fact = factorial(five)
-    println(s"Факториал: $fact")
+    println(s"Фундированный факториал: $fact")
 
 
 

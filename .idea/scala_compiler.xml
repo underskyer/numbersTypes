@@ -2,6 +2,11 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="numbersTypes,numbersTypes.main,numbersTypes.test" />
+    <profile name="sbt 1" modules="numbersTypes" />
+    <profile name="sbt 2" modules="numbersTypes.main,numbersTypes.test">
+      <parameters>
+        <parameter value="-Xkind-projector" />
+      </parameters>
+    </profile>
   </component>
 </project>

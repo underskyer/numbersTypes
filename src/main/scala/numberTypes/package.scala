@@ -7,6 +7,7 @@ infix type ~>[F[_], G[_]] = [A] => F[A] => G[A]
 type Algebra[F[_]] = [A] =>> F[A] => A
 type Id[A] = A
 type Fix[F[_]] = Algebra[F] ~> Id
+def cata[F[_]]: Algebra[F] ~> (Fix[F] => *) = [A] => alg => _(alg)
 
 infix type ~[A, B] = (
   to:   A => B,
