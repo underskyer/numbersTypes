@@ -6,46 +6,32 @@ object indNatural:
   object Zero
   type Zero = Zero.type
   case class Succ[Prev](prev: Prev)
+  
+  type Bool = Boolean & Singleton
 
-  // Вся структура NatFamily должна принимать Boolean индекс И тип для рекурсии
-  type NatFamily[B <: Boolean & Singleton] = [Prev] =>> B match {
-    case true => Zero
+  type NatFamily[B <: Bool] = [Prev] =>> B match
+    case true  => Zero
     case false => Succ[Prev]
-  }
 
-  // Правильное определение Fix, где функтором выступает лямбда,
-  // которая прячет булев флаг под экзистенциал, сохраняя рекурсию по Prev.
-  // Это позволяет нам связать рекурсию до раскрытия Sigma!
-  type NatFunctor = [Prev] =>> Sigma[? <: Boolean & Singleton, Prev]
+  type NatFunctor = [Prev] =>> Sigma[? <: Bool, Prev]
 
   case class Fix[F[_]](unfix: F[Fix[F]])
 
-  trait Sigma[B <: Boolean & Singleton, Prev] {
-    val tag: B
-    val value: NatFamily[B][Prev]
-  }
+  class Sigma[B <: Bool, Prev](val value: NatFamily[B][Prev], val tag: B)
 
-  object Sigma {
-    // Удобный конструктор для создания зависимой пары
-    def apply[B <: Boolean & Singleton, Prev](t: B, v: NatFamily[B][Prev]): Sigma[B, Prev] =
-      new Sigma[B, Prev] {
-        val tag: B = t
-        val value: NatFamily[B][Prev] = v
-      }
-  }
+  object Sigma:
+    // 2. Основной конструктор: принимает только value, а tag подставляет автоматически через implicit-контекст
+    def apply[B <: Bool : ValueOf as b, Prev](value: NatFamily[B][Prev]): Sigma[B, Prev] =
+      new Sigma(value, b.value)
 
-  // 1. ПРАВИЛО ФОРМУЛИРОВАНИЯ (Formation)
   type Nat = Fix[NatFunctor]
 
-  // 2. ПРАВИЛА ВВЕДЕНИЯ (Introduction)
-  // Теперь типы сходятся идеально, так как рекурсия идет строго через Nat (Fix)
-
   val zero: Nat =
-    val sigma = Sigma[true, Nat](true, Zero: Zero)
+    val sigma = Sigma[true, Nat](Zero)
     Fix[NatFunctor](sigma)
 
   def succ(prev: Nat): Nat =
-    val sigma = Sigma[false, Nat](false, Succ(prev))
+    val sigma = Sigma[false, Nat](Succ(prev))
     Fix[NatFunctor](sigma)
 
   // 3. ПРАВИЛО УНИЧТОЖЕНИЯ (Индуктор)
