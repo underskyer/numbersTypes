@@ -10,8 +10,9 @@ object indNatural:
   type Bool = Boolean & Singleton
 
   type NatFamily[B <: Bool] = [Prev] =>> B match
-    case true  => Zero
-    case false => Succ[Prev]
+    case false  => Zero
+    case true => Succ[Prev]
+//    case Bool => String
 
   type NatFunctor = [Prev] =>> Sigma[? <: Bool, Prev]
 
@@ -27,11 +28,11 @@ object indNatural:
   type Nat = Fix[NatFunctor]
 
   val zero: Nat =
-    val sigma = Sigma[true, Nat](Zero)
+    val sigma = Sigma[false, Nat](Zero)
     Fix[NatFunctor](sigma)
 
   def succ(prev: Nat): Nat =
-    val sigma = Sigma[false, Nat](Succ(prev))
+    val sigma = Sigma[true, Nat](Succ(prev))
     Fix[NatFunctor](sigma)
 
   // 3. ПРАВИЛО УНИЧТОЖЕНИЯ (Индуктор)
@@ -45,10 +46,10 @@ object indNatural:
     val sigma = n.unfix
 
     sigma.tag match {
-      case _: true =>
+      case _: false =>
         zeroCase.asInstanceOf[C[n.type]]
 
-      case _: false =>
+      case _: true =>
         // Если флаг false, NatFamily[false][Nat] гарантирует структуру Succ[Nat]
         val succStruct = sigma.value.asInstanceOf[Succ[Nat]]
         val prevNat = succStruct.prev
@@ -59,9 +60,9 @@ object indNatural:
   }
 
   def rec[T](
-              zeroCase: T,
-              succCase: Nat => T => T
-            )(n: Nat): T = {
+    zeroCase: T,
+    succCase: Nat => T => T
+  )(n: Nat): T = {
     ind[[_ <: Nat] =>> T](
       zeroCase,
       (p: Nat) => (ih: T) => succCase(p)(ih)
@@ -69,6 +70,15 @@ object indNatural:
   }
 
   object test:
+
+    val z: NatFamily[false][Nothing] = Zero
+    val one:  NatFamily[true ][Zero]   = Succ(Zero)
+    //val str:  NatFamily[Bool][Zero]   = "Succ(Zero)"
+
+    summon[true <:< Bool]
+    summon[false <:< Bool]
+    //summon[Singleton <:< Bool]
+
     private type FactState = (Long, Long)
 
     // 2. Оптимизированный рекурсор факториала со сложностью O(n)
