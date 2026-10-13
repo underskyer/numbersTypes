@@ -7,7 +7,7 @@ object numbers:
   case class Succ[A]()
 
   type Countable[A] = Zero + Succ[A]
-  type Nat = Fix[Countable]
+  type Nat = μ[Countable]
 
   opaque type Sum[A] = A × A
   type SumAlgebra = Algebra[Sum]

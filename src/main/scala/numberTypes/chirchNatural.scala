@@ -2,13 +2,9 @@ package numberTypes
 
 object chirchNatural:
 
-  object Zero
-  type Zero = Zero.type // Zero ≅ Unit ≅ 1
-  case class Succ[Prev](prev: Prev)
-
   type NatFunctor[A] = Zero + Succ[A]
 
-  type Nat = Fix[NatFunctor]
+  type Nat = μ[NatFunctor]
 
   val zero: Nat            = [A] => alg => alg(Left(Zero))
   def succ(prev: Nat): Nat = [A] => alg => alg(Right(Succ(prev(alg))))

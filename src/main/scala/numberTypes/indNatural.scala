@@ -1,78 +1,43 @@
 package numberTypes
 
-object indNatural:
+import numberTypes.sigmaPi.*
 
-  // Базовые кирпичики
-  object Zero
-  type Zero = Zero.type
-  case class Succ[Prev](prev: Prev)
+object indNatural:
   
   type Bool = Boolean & Singleton
 
-  type NatFamily[B <: Bool] = [Prev] =>> B match
+  type NatFamily[Prev] = [B] =>> B match
     case false  => Zero
     case true => Succ[Prev]
-//    case Bool => String
 
-  type NatFunctor = [Prev] =>> Sigma[? <: Bool, Prev]
-
-  case class Fix[F[_]](unfix: F[Fix[F]])
-
-  class Sigma[B <: Bool, Prev](val value: NatFamily[B][Prev], val tag: B)
-
-  object Sigma:
-    // 2. Основной конструктор: принимает только value, а tag подставляет автоматически через implicit-контекст
-    def apply[B <: Bool : ValueOf as b, Prev](value: NatFamily[B][Prev]): Sigma[B, Prev] =
-      new Sigma(value, b.value)
+  type NatFunctor[Prev] = ∑[NatFamily[Prev]]
 
   type Nat = Fix[NatFunctor]
 
   val zero: Nat =
-    val sigma = Sigma[false, Nat](Zero)
-    Fix[NatFunctor](sigma)
+    Fix(in[NatFamily[Nat], false](Zero))
 
-  def succ(prev: Nat): Nat =
-    val sigma = Sigma[true, Nat](Succ(prev))
-    Fix[NatFunctor](sigma)
+  def succ(n: Nat): Nat =
+    Fix(in[NatFamily[Nat], true](Succ(n)))
 
-  // 3. ПРАВИЛО УНИЧТОЖЕНИЯ (Индуктор)
   def ind[C[_ <: Nat]](
-    zeroCase: C[zero.type],
-    succCase: (p: Nat) => C[p.type] => C[Nat]
-  )(n: Nat): C[n.type] = {
-
-    // 4. ПРАВИЛО ВЫЧИСЛЕНИЯ
-    // Распаковываем Fix, чтобы получить Sigma
-    val sigma = n.unfix
-
-    sigma.tag match {
-      case _: false =>
-        zeroCase.asInstanceOf[C[n.type]]
-
-      case _: true =>
-        // Если флаг false, NatFamily[false][Nat] гарантирует структуру Succ[Nat]
-        val succStruct = sigma.value.asInstanceOf[Succ[Nat]]
-        val prevNat = succStruct.prev
-
-        val innerRes = ind[C](zeroCase, succCase)(prevNat)
-        succCase(prevNat)(innerRes).asInstanceOf[C[n.type]]
-    }
-  }
-
-  def rec[T](
-    zeroCase: T,
-    succCase: Nat => T => T
-  )(n: Nat): T = {
-    ind[[_ <: Nat] =>> T](
-      zeroCase,
-      (p: Nat) => (ih: T) => succCase(p)(ih)
-    )(n)
-  }
+    default: C[zero.type],
+    next: (p: Nat) => C[p.type] => C[Nat]//Succ[p.type]]
+  )(n: Nat): C[n.type] =
+    (n.unfix: @unchecked) match
+      case ∑.In(_, tag: false) =>
+        default.asInstanceOf[C[n.type]]
+  
+      case ∑.In(value, tag: true) =>
+        val p = value.asInstanceOf[Succ[Nat]].prev
+        next(p)(ind[C](default, next)(p)).asInstanceOf[C[n.type]]
+      
+  def rec[C] = ind[Const[C]]
 
   object test:
 
-    val z: NatFamily[false][Nothing] = Zero
-    val one:  NatFamily[true ][Zero]   = Succ(Zero)
+    val z: NatFamily[Nothing][false]  = Zero
+    val one:  NatFamily[Zero][true ]  = Succ(Zero)
     //val str:  NatFamily[Bool][Zero]   = "Succ(Zero)"
 
     summon[true <:< Bool]
@@ -83,8 +48,8 @@ object indNatural:
 
     // 2. Оптимизированный рекурсор факториала со сложностью O(n)
     private val factStateRec: Nat => FactState = rec[FactState](
-      zeroCase = (0L, 1L), // Для нуля: число = 0L, 0! = 1L
-      succCase = _ => {
+      (0L, 1L), // Для нуля: число = 0L, 0! = 1L
+      _ => {
         case (currentLong, currentFact) =>
           val nextLong = currentLong + 1L
           val nextFact = currentFact * nextLong

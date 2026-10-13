@@ -5,8 +5,6 @@ object recNatural:
   enum NatFunctor[A]: // formation
     case Zero             extends NatFunctor[Nothing] // introduction (1-й конструктор)
     case Succ[P](prev: P) extends NatFunctor[P]       // introduction (2-й конструктор)
-    
-  case class Fix[F[_]](unfix: F[Fix[F]])
   
   type Nat = Fix[NatFunctor]
   

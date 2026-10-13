@@ -8,3 +8,5 @@ def main() =
   chirchNatural.test
   indNatural.test
   wellFounded.test
+
+  sigmaPi.test
