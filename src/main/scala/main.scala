@@ -14,4 +14,6 @@ def main() =
   vec.test
   vec.test.flatteners
   natSigma.test
+  natSigmaGADT.test
+  natSigmaChirch.test
 
