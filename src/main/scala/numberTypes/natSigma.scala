@@ -35,6 +35,8 @@ object natSigma:
     unfix: F[[X <: IndType] =>> Mu[IndType, F, X], I]
   )
 
+  type μ[IndType] = [F[Self[_ <: IndType], _ <: IndType]] =>> [I <: IndType] =>> Mu[IndType, F, I]
+
   // ============================================================================
   // 3. Чистый Натуральный Тип без ООП-надстроек (NatFunctor & NatTerm API)
   // ============================================================================
@@ -52,8 +54,7 @@ object natSigma:
     ][b]
   ]
 
-  // NatTerm теперь САМОДОСТАТОЧЕН. Никаких трейтов Nat поверх него больше нет.
-  type Nat[I <: NatIdx] = Mu[NatIdx, NatFunctor, I]
+  type Nat = μ[NatIdx][NatFunctor]
 
   object Nat:
     def zero: Nat[ZeroIdx] =

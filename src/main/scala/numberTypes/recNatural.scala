@@ -31,7 +31,7 @@ object recNatural:
     
     import NatFunctor.*
     
-    val five = succ(succ(succ(succ(succ(zero)))))
+    val five: Nat = succ(succ(succ(succ(succ(zero)))))
 
     println("рекурсивный факториал: " + factorial(five))
 
