@@ -1,19 +1,23 @@
 package numberTypes
 
+import numberTypes.indNatural.Bool
+
 object sigmaPi:
 
-  type `∑₀` = [F[_]] =>> F[Any] // теряется сведение о типе
-  type Σᴄʜɪʀᴄʜ = [F[_]] =>> [Y] => ([X] => F[X] => Y) => Y
 
-  enum ∑[G[_ <: Singleton]]: // Σɪɴᴅ
-    case In[F[_], A <: Singleton](fa: F[A], tag: A) extends ∑[F]
+  type Σʙᴏᴜɴᴅ [IndexType, F[_ <: IndexType]] = F[IndexType]
+  type Σᴄʜɪʀᴄʜ[IndexType, F[_ <: IndexType]] = [Y] => ([I <: IndexType] => F[I] => Y) => Y
 
-  inline def in[F[_], A <: Singleton : ValueOf as a](fa: F[A]) =
-    ∑.In[F, A](fa, a.value)
+  trait Σᴏᴏᴘ[IndexType, F[_ <: IndexType]]:
+    type I <: IndexType // первая проекция
+    val fi: F[I]        // вторая проекция
 
-  trait Σᴏᴏᴘ[F[_]]:
-    type A
-    val fa: F[A]
+  enum ∑[IndexType, G[_ <: IndexType]]: // Σɪɴᴅ
+    case In[I, F[_ <: I], i <: I](fi: F[i], index: i) extends ∑[I, F]
+
+  inline def in[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): ∑[I, F] =
+    ∑.In[I, F, i](fi, summon[ValueOf[i]].value)
+
 
 
   type ∏ = [F[_]] =>> [A] => () => F[A]
@@ -23,7 +27,7 @@ object sigmaPi:
 
   object test:
     println()
-    println("ends test:")
+    println("sigma pi:")
 
     val optUsage: [X] => Option[X] => String =
       [X] => x => x.map(_.asInstanceOf[Matchable]).fold("???"): // .map(_.asInstanceOf[Matchable])
@@ -32,7 +36,7 @@ object sigmaPi:
         case x => "??? " + x
 
 
-    val d: Σᴄʜɪʀᴄʜ[Option] = [_] => x => x(Some(42))
+    val d: Σᴄʜɪʀᴄʜ[Bool, Option] = [_] => x => x(Some(true))
     val dd = d(optUsage)
     println("∑: " + dd)
 
@@ -42,10 +46,10 @@ object sigmaPi:
 //    }
 //    println("∑∑: " + ddSS)
 
-    val dSSS: Σᴏᴏᴘ[Option] = new:
-      type A = Int
-      val fa = Some(42)
-    val ddSSS = optUsage(dSSS.fa)
+    val dSSS: Σᴏᴏᴘ[Bool, Option] = new:
+      type I = Bool
+      val fi = Some(true)
+    val ddSSS = optUsage(dSSS.fi)
     println("∑∑∑: " + ddSSS)
 
     val ll: ∏[Option] = [A] => () => None

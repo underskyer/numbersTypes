@@ -10,3 +10,8 @@ def main() =
   wellFounded.test
 
   sigmaPi.test
+  finit.test
+  vec.test
+  vec.test.flatteners
+  natSigma.test
+

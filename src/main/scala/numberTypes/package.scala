@@ -13,7 +13,8 @@ def cata[F[_]]: Algebra[F] ~> (μ[F] => *) = [A] => alg => _(alg)
 
 case class Fix[F[_]](unfix: F[Fix[F]])
 
-case class FFix[F[_[_], _], I](unfix: F[[J] =>> FFix[F, J], I])
+case class FFix[F[Self[_], _], I](unfix: F[FFix[F, *], I])
+
 
 
 // Базовые кирпичики

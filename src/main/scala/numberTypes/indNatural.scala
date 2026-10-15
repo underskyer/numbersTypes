@@ -7,31 +7,33 @@ object indNatural:
   type Bool = Boolean & Singleton
 
   type NatFamily[Prev] = [B] =>> B match
-    case false  => Zero
-    case true => Succ[Prev]
+    case false => Zero
+    case true  => Succ[Prev]
 
-  type NatFunctor[Prev] = ∑[NatFamily[Prev]]
+  type NatFunctor[Prev] = ∑[Bool, NatFamily[Prev]]
 
   type Nat = Fix[NatFunctor]
 
+  type Z = ∑.In[Bool, NatFamily[Nat], false]
+  type S = ∑.In[Bool, NatFamily[Nat], true]
+
   val zero: Nat =
-    Fix(in[NatFamily[Nat], false](Zero))
+    Fix(in[Bool, NatFamily[Nat], false](Zero))
 
   def succ(n: Nat): Nat =
-    Fix(in[NatFamily[Nat], true](Succ(n)))
+    Fix(in[Bool, NatFamily[Nat], true](Succ(n)))
 
-  def ind[C[_ <: Nat]](
+  def ind[C[+_ <: Nat]](
     default: C[zero.type],
-    next: (p: Nat) => C[p.type] => C[Nat]//Succ[p.type]]
+    next: (p: Nat) => C[p.type] => C[Nat]
   )(n: Nat): C[n.type] =
     (n.unfix: @unchecked) match
-      case ∑.In(_, tag: false) =>
-        default.asInstanceOf[C[n.type]]
-  
-      case ∑.In(value, tag: true) =>
+      case ∑.In(_,     false) => default.asInstanceOf[C[n.type]]
+      case ∑.In(value, true ) =>
         val p = value.asInstanceOf[Succ[Nat]].prev
         next(p)(ind[C](default, next)(p)).asInstanceOf[C[n.type]]
-      
+
+  
   def rec[C] = ind[Const[C]]
 
   object test:
