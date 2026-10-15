@@ -1,6 +1,6 @@
 package numberTypes
 
-import numberTypes.sigmaPi.*
+import numberTypes.sigmaTypes.*
 import numberTypes.indNatural.*
 
 import scala.compiletime.{erasedValue, summonInline}

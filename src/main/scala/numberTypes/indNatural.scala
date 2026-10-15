@@ -1,6 +1,6 @@
 package numberTypes
 
-import numberTypes.sigmaPi.*
+import numberTypes.sigmaTypes.*
 
 object indNatural:
   

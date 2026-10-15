@@ -2,7 +2,7 @@ package numberTypes
 
 import numberTypes.indNatural.Bool
 
-object sigmaPi:
+object sigmaTypes:
 
 
   type Σʙᴏᴜɴᴅ [IndexType, F[_ <: IndexType]] = F[IndexType]

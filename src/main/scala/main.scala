@@ -9,7 +9,7 @@ def main() =
   indNatural.test
   wellFounded.test
 
-  sigmaPi.test
+  sigmaTypes.test
   finit.test
   vec.test
   vec.test.flatteners
