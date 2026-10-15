@@ -4,32 +4,30 @@ import numberTypes.sigmaTypes.*
 
 object indNatural:
   
-  type Bool = Boolean & Singleton
-
   type NatFamily[Prev] = [B] =>> B match
     case false => Zero
     case true  => Succ[Prev]
 
-  type NatFunctor[Prev] = ∑[Bool, NatFamily[Prev]]
+  type NatFunctor[Prev] = Σɢᴀᴅᴛ[Bool, NatFamily[Prev]]
 
   type Nat = Fix[NatFunctor]
 
-  type Z = ∑.In[Bool, NatFamily[Nat], false]
-  type S = ∑.In[Bool, NatFamily[Nat], true]
+  type Z = Σɢᴀᴅᴛ.ΣIn[Bool, NatFamily[Nat], false]
+  type S = Σɢᴀᴅᴛ.ΣIn[Bool, NatFamily[Nat], true]
 
   val zero: Nat =
-    Fix(in[Bool, NatFamily[Nat], false](Zero))
+    Fix(Σin[Bool, NatFamily[Nat], false](Zero))
 
   def succ(n: Nat): Nat =
-    Fix(in[Bool, NatFamily[Nat], true](Succ(n)))
+    Fix(Σin[Bool, NatFamily[Nat], true](Succ(n)))
 
   def ind[C[+_ <: Nat]](
     default: C[zero.type],
     next: (p: Nat) => C[p.type] => C[Nat]
   )(n: Nat): C[n.type] =
     (n.unfix: @unchecked) match
-      case ∑.In(_,     false) => default.asInstanceOf[C[n.type]]
-      case ∑.In(value, true ) =>
+      case Σɢᴀᴅᴛ.ΣIn(_,     false) => default.asInstanceOf[C[n.type]]
+      case Σɢᴀᴅᴛ.ΣIn(value, true ) =>
         val p = value.asInstanceOf[Succ[Nat]].prev
         next(p)(ind[C](default, next)(p)).asInstanceOf[C[n.type]]
 

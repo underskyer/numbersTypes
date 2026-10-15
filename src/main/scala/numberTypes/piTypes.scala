@@ -3,10 +3,10 @@ package numberTypes
 object piTypes:
 
   // Класс-оболочка (по желанию, для явного именования типа)
-  type Pi[Index, F[_ <: Index]] = (i: Index) => F[i.type]
+  type ∏[Index, F[_ <: Index]] = (i: Index) => F[i.type]
 
   // Настоящий Пи-тип на уровне типов (принимает тип I и возвращает F[I])
-  type PiType[Index, F[_ <: Index]] = [I <: Index] =>> F[I]
+  type Π[Index, F[_ <: Index]] = [I <: Index] =>> F[I]
 
 
   object testPi:
@@ -24,7 +24,7 @@ object piTypes:
       case Square => Float
 
     // 3. Реализация Пи-функции
-    val calculateArea: Pi[Shape, AreaResult] = (s: Shape) => s match
+    val calculateArea: ∏[Shape, AreaResult] = (s: Shape) => s match
       case c: Circle => c.radius * c.radius * Math.PI
       case s: Square => (s.side * s.side).toFloat
 
@@ -46,8 +46,8 @@ object piTypes:
       case User => String
 
     // Демонстрация работы: компилятор строго проверяет соответствие типов
-    val adminPerms: PiType[Role, Permissions][Admin] = List("delete_user", "ban")
-    val userPerms:  PiType[Role, Permissions][User]  = "read_only"
+    val adminPerms: Π[Role, Permissions][Admin] = List("delete_user", "ban")
+    val userPerms:  Π[Role, Permissions][User]  = "read_only"
 
     // Ошибка компиляции (Type Mismatch):
     // val wrong: PiType[Role, Permissions][Admin] = "just a string"

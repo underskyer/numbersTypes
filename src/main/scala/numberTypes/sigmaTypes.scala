@@ -1,7 +1,5 @@
 package numberTypes
 
-import numberTypes.indNatural.Bool
-
 object sigmaTypes:
 
 
@@ -51,7 +49,18 @@ object sigmaTypes:
   //    	и восстановить его без явных кастов будет невозможно.
   trait Σᴏᴏᴘ[IndexType, F[_ <: IndexType]]:
     type I <: IndexType // первая проекция
-    val fi: F[I]        // вторая проекция
+    val index: I
+    val value: F[I]        // вторая проекция
+
+  object Σᴏᴏᴘ :
+    def apply[
+      IndexType,
+      TypeFamily[_ <: IndexType],
+      In <: IndexType
+    ](i: In, v: TypeFamily[In]): Σᴏᴏᴘ[IndexType, TypeFamily] = new:
+      type I = In
+      val index: In = i
+      val value: TypeFamily[In] = v
 
   // • Преимущества:
   //	• Самый лаконичный и идиоматичный синтаксис:
@@ -70,17 +79,14 @@ object sigmaTypes:
   //    	Компилятору сложнее протащить точную связь
   //    	между параметрами типа кейса In и внешним match-type,
   //    	из-за чего приходится использовать asInstanceOf.
-  enum ∑[IndexType, G[_ <: IndexType]]: // Σɪɴᴅ
-    case In[I, F[_ <: I], i <: I](fi: F[i], index: i) extends ∑[I, F]
+  enum Σɢᴀᴅᴛ[IndexType, G[_ <: IndexType]]: // 
+    case ΣIn[I, F[_ <: I], i <: I](fi: F[i], index: i) extends Σɢᴀᴅᴛ[I, F]
+  export Σɢᴀᴅᴛ.ΣIn
 
-  inline def in[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): ∑[I, F] =
-    ∑.In[I, F, i](fi, summon[ValueOf[i]].value)
+  inline def Σin[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): Σɢᴀᴅᴛ[I, F] =
+    Σɢᴀᴅᴛ.ΣIn[I, F, i](fi, summon[ValueOf[i]].value)
 
-
-
-  type ∏ = [F[_]] =>> [A] => () => F[A]
-  extension [F[_]](pif: ∏[F])
-    inline def apply[A] = pif[A]()
+  type ∑ = Σɢᴀᴅᴛ
 
 
   object test:
@@ -104,13 +110,6 @@ object sigmaTypes:
 //    }
 //    println("∑∑: " + ddSS)
 
-    val dSSS: Σᴏᴏᴘ[Bool, Option] = new:
-      type I = Bool
-      val fi = Some(true)
-    val ddSSS = optUsage(dSSS.fi)
-    println("∑∑∑: " + ddSSS)
-
-    val ll: ∏[Option] = [A] => () => None
-    println("∏ " + ll[String]())
-
-
+//    val dSSS: Σᴏᴏᴘ[Bool, Option] = Σᴏᴏᴘ[Bool, Option, true]()
+//    val ddSSS = optUsage(dSSS.fi)
+//    println("∑∑∑: " + ddSSS)

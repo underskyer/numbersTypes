@@ -1,5 +1,7 @@
 package numberTypes
 
+import numberTypes.sigmaTypes.Σᴏᴏᴘ
+
 object natSigma:
 
   // ============================================================================
@@ -27,7 +29,9 @@ object natSigma:
     type N2 = N[true][N1, Option]
     type N3 = N[true][N2, Option]
 
-    case class MuN[F[_[_ <: Bool], _ <: Bool], B <: Bool](unfix: F[[X <: Bool] =>> MuN[F, X], B])
+    case class MuN[F[_[_ <: Bool], _ <: Bool], B <: Bool](
+      unfix: F[[X <: Bool] =>> MuN[F, X], B]
+    )
 
     type μN[F[_[_ <: Bool], _ <: Bool]] = [B <: Bool] =>> MuN[F, B]
 
@@ -39,59 +43,35 @@ object natSigma:
 
   end NatIndexFix
 
-
-  trait Sigma[IndexType, TypeFamily[_ <: IndexType]]:
-    type Tag <: IndexType
-    val tag: Tag
-    val value: TypeFamily[Tag]
-
-  object Sigma:
-    def apply[IndexType, TypeFamily[_ <: IndexType], T <: IndexType](t: T, v: TypeFamily[T]): Sigma[IndexType, TypeFamily] { type Tag = T } =
-      new Sigma[IndexType, TypeFamily]:
-        type Tag = T
-        val tag: T = t
-        val value: TypeFamily[T] = v
-
-  // ============================================================================
-  // 2. Индексированная Неподвижная Точка
-  // ============================================================================
-
-  case class Mu[IndType, F[Self[_ <: IndType], _ <: IndType], I <: IndType](
-    unfix: F[[X <: IndType] =>> Mu[IndType, F, X], I]
-  )
-
-  type μ[IndType] = [F[Self[_ <: IndType], _ <: IndType]] =>> [I <: IndType] =>> Mu[IndType, F, I]
-
   // ============================================================================
   // 3. Чистый Натуральный Тип без ООП-надстроек (NatFunctor & NatTerm API)
   // ============================================================================
 
-  // Переименовали R в NextLayer для понятности структуры
   type NatFamily[NextLayer[_ <: NatIdx], I <: NatIdx] = [b <: Bool] =>> b match
     case true  => Unit
     case false => NextLayer[I]
 
   // Переименовали NatForm в NatFunctor
-  type NatFunctor[NextLayer[_ <: NatIdx], O <: NatIdx] = Sigma[Bool, [b <: Bool] =>>
+  type NatFunctor[NextLayer[_ <: NatIdx], O <: NatIdx] = Σᴏᴏᴘ[Bool,
     NatFamily[NextLayer, O match
       case ZeroIdx => ZeroIdx
       case SuccIdx[prev] => prev
-    ][b]
+    ]
   ]
 
-  type Nat = μ[NatIdx][NatFunctor]
+  type Nat = μμ[NatIdx][NatFunctor]
 
   object Nat:
     def zero: Nat[ZeroIdx] =
       Mu[NatIdx, NatFunctor, ZeroIdx](
-        Sigma[Bool, [b <: Bool] =>> NatFamily[Nat, ZeroIdx][b], true](true, ())
-          .asInstanceOf[Sigma[Bool, [b <: Bool] =>> NatFamily[Nat, ZeroIdx][b]]]
+        Σᴏᴏᴘ[Bool, NatFamily[Nat, ZeroIdx], true](true, ())
+          .asInstanceOf[Σᴏᴏᴘ[Bool, NatFamily[Nat, ZeroIdx]]]
       )
 
     def succ[I <: NatIdx](n: Nat[I]): Nat[SuccIdx[I]] =
       Mu[NatIdx, NatFunctor, SuccIdx[I]](
-        Sigma[Bool, [b <: Bool] =>> NatFamily[Nat, I][b], false](false, n)
-          .asInstanceOf[Sigma[Bool, [b <: Bool] =>> NatFamily[Nat, I][b]]]
+        Σᴏᴏᴘ[Bool, NatFamily[Nat, I], false](false, n)
+          .asInstanceOf[Σᴏᴏᴘ[Bool, NatFamily[Nat, I]]]
       )
   end Nat
 
@@ -104,7 +84,7 @@ object natSigma:
     vSucc: [I <: NatIdx] => (prev: Nat[I], prevP: P[I]) => P[SuccIdx[I]]
   ): [I <: NatIdx] => (n: Nat[I]) => P[I] =
     [I <: NatIdx] => (n: Nat[I]) =>
-      def loop[K <: NatIdx](m: Nat[K]): P[K] = m.unfix.tag match
+      def loop[K <: NatIdx](m: Nat[K]): P[K] = m.unfix.index match
         case _: true => vZero.asInstanceOf[P[K]]
         case _: false =>
           val prevTerm = m.unfix.value.asInstanceOf[Nat[NatIdx]]

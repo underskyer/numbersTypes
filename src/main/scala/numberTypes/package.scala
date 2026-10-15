@@ -1,5 +1,7 @@
 package numberTypes
 
+type Bool = Boolean & Singleton
+
 infix type ×[A, B] = (A, B)
 infix type +[A, B] = A Either B
 
@@ -13,8 +15,15 @@ def cata[F[_]]: Algebra[F] ~> (μ[F] => *) = [A] => alg => _(alg)
 
 case class Fix[F[_]](unfix: F[Fix[F]])
 
-case class FFix[F[Self[_], _], I](unfix: F[FFix[F, *], I])
+// ============================================================================
+// 2. Индексированная Неподвижная Точка
+// ============================================================================
 
+case class Mu[IndType, F[Self[_ <: IndType], _ <: IndType], I <: IndType](
+  unfix: F[[X <: IndType] =>> Mu[IndType, F, X], I]
+)
+
+type μμ[IndType] = [F[Self[_ <: IndType], _ <: IndType]] =>> [I <: IndType] =>> Mu[IndType, F, I]
 
 
 // Базовые кирпичики
