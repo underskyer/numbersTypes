@@ -66,19 +66,17 @@ object natSigma:
 
   given [I <: NatIdx] => Conversion[Nat[I], ℕ] = (n: Nat[I]) => Σᴏᴏᴘ.OOP[NatIdx, Nat, I](n)
 
-  object Nat:
-    def zero: Nat[ZeroIdx] =
-      Mu[NatIdx, NatFunctor, ZeroIdx](
-        Σᴏᴏᴘ[Bool, NatFamily[Nat, ZeroIdx], true](())
-          .asInstanceOf[Σᴏᴏᴘ[Bool, NatFamily[Nat, ZeroIdx]]]
-      )
+  def zero: Nat[ZeroIdx] =
+    Mu[NatIdx, NatFunctor, ZeroIdx](
+      Σᴏᴏᴘ[Bool, NatFamily[Nat, ZeroIdx], true](())
+        .asInstanceOf[Σᴏᴏᴘ[Bool, NatFamily[Nat, ZeroIdx]]]
+    )
 
-    def succ[I <: NatIdx](n: Nat[I]): Nat[SuccIdx[I]] =
-      Mu[NatIdx, NatFunctor, SuccIdx[I]](
-        Σᴏᴏᴘ[Bool, NatFamily[Nat, I], false](n)
-          .asInstanceOf[Σᴏᴏᴘ[Bool, NatFamily[Nat, I]]]
-      )
-  end Nat
+  def succ[I <: NatIdx](n: Nat[I]): Nat[SuccIdx[I]] =
+    Mu[NatIdx, NatFunctor, SuccIdx[I]](
+      Σᴏᴏᴘ[Bool, NatFamily[Nat, I], false](n)
+        .asInstanceOf[Σᴏᴏᴘ[Bool, NatFamily[Nat, I]]]
+    )
 
   // ============================================================================
   // 4. Зависимый Элиминатор (Индуктор) работает напрямую с NatTerm
@@ -114,9 +112,9 @@ object natSigma:
     )
 
     // Конструируем термы напрямую через фабрику NatTerm
-    val n0 = Nat.zero
-    val n1 = Nat.succ(n0)
-    val n2 = Nat.succ(n1)
+    val n0 = zero
+    val n1 = succ(n0)
+    val n2 = succ(n1)
 
     val r0: EmptyTuple = myInductor(n0)
     val r1: Int *: EmptyTuple = myInductor(n1)
