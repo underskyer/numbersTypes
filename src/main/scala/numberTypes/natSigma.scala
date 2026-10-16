@@ -51,26 +51,31 @@ object natSigma:
     case true  => Unit
     case false => NextLayer[I]
 
+  type PredIdx[I <: NatIdx] <: NatIdx = I match
+    case ZeroIdx => ZeroIdx
+    case SuccIdx[prev] => prev
+
   // Переименовали NatForm в NatFunctor
-  type NatFunctor[NextLayer[_ <: NatIdx], O <: NatIdx] = Σᴏᴏᴘ[Bool,
-    NatFamily[NextLayer, O match
-      case ZeroIdx => ZeroIdx
-      case SuccIdx[prev] => prev
-    ]
+  type NatFunctor[NextLayer[_ <: NatIdx], I <: NatIdx] = Σᴏᴏᴘ[Bool,
+    NatFamily[NextLayer, PredIdx[I]]
   ]
 
   type Nat = μμ[NatIdx][NatFunctor]
 
+  type ℕ = Σᴏᴏᴘ[NatIdx, Nat]
+
+  given [I <: NatIdx] => Conversion[Nat[I], ℕ] = (n: Nat[I]) => Σᴏᴏᴘ.OOP[NatIdx, Nat, I](n)
+
   object Nat:
     def zero: Nat[ZeroIdx] =
       Mu[NatIdx, NatFunctor, ZeroIdx](
-        Σᴏᴏᴘ[Bool, NatFamily[Nat, ZeroIdx], true](true, ())
+        Σᴏᴏᴘ[Bool, NatFamily[Nat, ZeroIdx], true](())
           .asInstanceOf[Σᴏᴏᴘ[Bool, NatFamily[Nat, ZeroIdx]]]
       )
 
     def succ[I <: NatIdx](n: Nat[I]): Nat[SuccIdx[I]] =
       Mu[NatIdx, NatFunctor, SuccIdx[I]](
-        Σᴏᴏᴘ[Bool, NatFamily[Nat, I], false](false, n)
+        Σᴏᴏᴘ[Bool, NatFamily[Nat, I], false](n)
           .asInstanceOf[Σᴏᴏᴘ[Bool, NatFamily[Nat, I]]]
       )
   end Nat
@@ -84,9 +89,10 @@ object natSigma:
     vSucc: [I <: NatIdx] => (prev: Nat[I], prevP: P[I]) => P[SuccIdx[I]]
   ): [I <: NatIdx] => (n: Nat[I]) => P[I] =
     [I <: NatIdx] => (n: Nat[I]) =>
-      def loop[K <: NatIdx](m: Nat[K]): P[K] = m.unfix.index match
-        case _: true => vZero.asInstanceOf[P[K]]
-        case _: false =>
+      def loop[K <: NatIdx](m: Nat[K]): P[K] = m.unfix match
+        case Σᴏᴏᴘ.OOP(_: Unit) => vZero.asInstanceOf[P[K]]
+        case Σᴏᴏᴘ.OOP(_: Nat[I]) =>
+        //case _: Σᴏᴏᴘ[NatIdx, NatFamily[Nat, PredIdx[I]]] { type I = false } =>
           val prevTerm = m.unfix.value.asInstanceOf[Nat[NatIdx]]
           val prevP = loop(prevTerm)
           vSucc(prevTerm, prevP).asInstanceOf[P[K]]
@@ -101,15 +107,11 @@ object natSigma:
       case ZeroIdx => EmptyTuple
       case SuccIdx[prev] => Int *: TupleFamily[prev]
 
-    val myInductorBase = ind[TupleFamily](
+    val myInductor = ind[TupleFamily](
       vZero = EmptyTuple,
       vSucc = [I <: NatIdx] => (prev: Nat[I], prevP: TupleFamily[I]) =>
         (42 *: prevP).asInstanceOf[TupleFamily[SuccIdx[I]]]
     )
-
-    // Принимает чистый NatTerm[I] и возвращает зависимый TupleFamily[I]
-    inline def myInductor[I <: NatIdx](n: Nat[I]): TupleFamily[I] =
-      myInductorBase[I](n)
 
     // Конструируем термы напрямую через фабрику NatTerm
     val n0 = Nat.zero

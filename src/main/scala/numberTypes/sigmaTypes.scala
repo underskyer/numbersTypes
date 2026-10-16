@@ -49,18 +49,23 @@ object sigmaTypes:
   //    	и восстановить его без явных кастов будет невозможно.
   trait Σᴏᴏᴘ[IndexType, F[_ <: IndexType]]:
     type I <: IndexType // первая проекция
-    val index: I
+    //def index: I
     val value: F[I]        // вторая проекция
 
   object Σᴏᴏᴘ :
+    case class OOP[IndexType, F[_ <: IndexType], In <: IndexType](value: F[In]) extends Σᴏᴏᴘ[IndexType, F]:
+      type I = In
+      
     def apply[
       IndexType,
       TypeFamily[_ <: IndexType],
       In <: IndexType
-    ](i: In, v: TypeFamily[In]): Σᴏᴏᴘ[IndexType, TypeFamily] = new:
-      type I = In
-      val index: In = i
-      val value: TypeFamily[In] = v
+    ](v: TypeFamily[In]): Σᴏᴏᴘ[IndexType, TypeFamily] =
+      OOP[IndexType, TypeFamily, In](v)
+//      new:
+//        type I = In
+//        //def index: In = valueOf[In]
+//        val value: TypeFamily[In] = v
 
   // • Преимущества:
   //	• Самый лаконичный и идиоматичный синтаксис:
@@ -79,19 +84,43 @@ object sigmaTypes:
   //    	Компилятору сложнее протащить точную связь
   //    	между параметрами типа кейса In и внешним match-type,
   //    	из-за чего приходится использовать asInstanceOf.
-  enum Σɢᴀᴅᴛ[IndexType, G[_ <: IndexType]]: // 
-    case ΣIn[I, F[_ <: I], i <: I](fi: F[i], index: i) extends Σɢᴀᴅᴛ[I, F]
+  enum Σɢᴀᴅᴛ[IndexType, G[_ <: IndexType]]: //
+    case ΣIn[I, F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
   export Σɢᴀᴅᴛ.ΣIn
 
   inline def Σin[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): Σɢᴀᴅᴛ[I, F] =
-    Σɢᴀᴅᴛ.ΣIn[I, F, i](fi, summon[ValueOf[i]].value)
+    Σɢᴀᴅᴛ.ΣIn[I, F, i](summon[ValueOf[i]].value, fi)
 
   type ∑ = Σɢᴀᴅᴛ
 
 
   object test:
+
     println()
     println("sigma pi:")
+
+    type Sum[A, B] = ∑[Bool, Pair[A, B]]
+
+    def sumIso[A, B]: (A + B) ≅ Sum[A, B] = (
+      forward = _.fold[Sum[A, B]](
+        Σin[Bool, Pair[A, B], false],
+        Σin[Bool, Pair[A, B], true]
+      ),
+      backward =
+        case ΣIn(false, a: A) => Left(a)
+        case ΣIn(true,  b: B) => Right(b)
+    )
+
+    val iso = sumIso[Int, String]
+    println("sum iso left : " + iso.backward(iso.forward(Left[Int, String](42))))
+    println("sum iso right: " + iso.backward(iso.forward(Right[Int, String]("str: 42"))))
+
+    type ProdΣ[A, B] = ∑[A, Const[B]]
+    def prodΣIso[A, B]: (A × B) ≅ ProdΣ[A, B] = (
+      forward = ΣIn[A, Const[B], A].tupled,
+      backward = { case ΣIn(a: A, b: B) => a -> b }
+    )
+
 
     val optUsage: [X] => Option[X] => String =
       [X] => x => x.map(_.asInstanceOf[Matchable]).fold("???"): // .map(_.asInstanceOf[Matchable])

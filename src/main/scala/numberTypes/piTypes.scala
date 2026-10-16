@@ -6,7 +6,7 @@ object piTypes:
   type ∏[Index, F[_ <: Index]] = (i: Index) => F[i.type]
 
   // Настоящий Пи-тип на уровне типов (принимает тип I и возвращает F[I])
-  type Π[Index, F[_ <: Index]] = [I <: Index] =>> F[I]
+  type Π[Index, F[_ <: Index]] = [I <: Index] => () => F[I]
 
 
   object testPi:
@@ -35,21 +35,27 @@ object piTypes:
   end testPi
 
 
-  object testPiType:
-    sealed trait Role
-    final class Admin extends Role
-    final class User  extends Role
+  object testPiIso:
 
-    // Семейство типов (B(x)), сопоставляющее Role с типом прав
-    type Permissions[R <: Role] = R match
-      case Admin => List[String]
-      case User => String
 
-    // Демонстрация работы: компилятор строго проверяет соответствие типов
-    val adminPerms: Π[Role, Permissions][Admin] = List("delete_user", "ban")
-    val userPerms:  Π[Role, Permissions][User]  = "read_only"
+    type ProdΠ[A, B] = ∏[Bool, Pair[A, B]]
+    def prodΠIso[A, B]: (A × B) ≅ ProdΠ[A, B] = (
+      forward = ab =>
+        case _: false => ab._1
+        case _: true  => ab._2,
+      backward = p => p(false) -> p(true)
+    )
 
-    // Ошибка компиляции (Type Mismatch):
-    // val wrong: PiType[Role, Permissions][Admin] = "just a string"
-  end testPiType
+    type Exp[A, B] = ∏[A, Const[B]]
+    def expIso[A, B]: (A => B) ≅ Exp[A, B] = (
+      forward = identity,
+      backward = f => f(_)
+    )
+
+
+    println("==================================================")
+    println("                 testPiType                       ")
+    println("==================================================")
+
+  end testPiIso
 

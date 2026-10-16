@@ -10,6 +10,16 @@ type Algebra[F[_]] = [A] =>> F[A] => A
 type Id[A] = A
 type Const[A] = [X] =>> A
 
+type Pair[A, B] = [R <: Bool] =>> R match
+  case false => A
+  case true => B
+
+
+infix type ≅[A, B] = (
+  forward : A => B,
+  backward: B => A
+)
+
 type μ[F[_]] = Algebra[F] ~> Id
 def cata[F[_]]: Algebra[F] ~> (μ[F] => *) = [A] => alg => _(alg)
 

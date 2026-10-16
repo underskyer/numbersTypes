@@ -16,4 +16,8 @@ def main() =
   natSigma.test
   natSigmaGADT.test
   natSigmaChirch.test
+  natPathDep.test
+  piTypes.testPiIso
+  recursor.test
+  
 

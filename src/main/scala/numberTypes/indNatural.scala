@@ -26,8 +26,8 @@ object indNatural:
     next: (p: Nat) => C[p.type] => C[Nat]
   )(n: Nat): C[n.type] =
     (n.unfix: @unchecked) match
-      case Σɢᴀᴅᴛ.ΣIn(_,     false) => default.asInstanceOf[C[n.type]]
-      case Σɢᴀᴅᴛ.ΣIn(value, true ) =>
+      case Σɢᴀᴅᴛ.ΣIn(false, _   ) => default.asInstanceOf[C[n.type]]
+      case Σɢᴀᴅᴛ.ΣIn(true, value) =>
         val p = value.asInstanceOf[Succ[Nat]].prev
         next(p)(ind[C](default, next)(p)).asInstanceOf[C[n.type]]
 
