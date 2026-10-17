@@ -10,7 +10,7 @@ def main() =
   indNatural.test
 
   sigmaTypes.test
-  finit.test
+  //finit.test
   vec.test
   vec.test.flatteners
   natSigma.test

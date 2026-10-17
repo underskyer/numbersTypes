@@ -25,6 +25,7 @@ def cata[F[_]]: Algebra[F] ~> (μ[F] => *) = [A] => alg => _(alg)
 
 case class Fix[F[_]](unfix: F[Fix[F]])
 
+
 // ============================================================================
 // 2. Индексированная Неподвижная Точка
 // ============================================================================
@@ -48,7 +49,7 @@ object Σᴏᴏᴘ:
 // Базовые кирпичики
 object Zero
 type Zero = Zero.type
-case class Succ[Prev](prev: Prev)
+case class Succ[+Prev](prev: Prev)
 
 
 infix type ~[A, B] = (
