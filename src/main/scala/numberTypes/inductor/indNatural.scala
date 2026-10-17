@@ -1,6 +1,7 @@
-package numberTypes
+package numberTypes.inductor
 
 import numberTypes.sigmaTypes.*
+import numberTypes.*
 
 object indNatural:
   
@@ -36,6 +37,10 @@ object indNatural:
 
   object test:
 
+    println("==================================================")
+    println("                НАТРУАЛЬНАЯ ИНДУКЦИЯ              ")
+    println("==================================================")
+
     val z: NatFamily[Nothing][false]  = Zero
     val one:  NatFamily[Zero][true ]  = Succ(Zero)
     //val str:  NatFamily[Bool][Zero]   = "Succ(Zero)"
@@ -62,3 +67,28 @@ object indNatural:
 
     val five: Nat = succ(succ(succ(succ(succ(zero)))))
     println(s"индуктивный факториал: ${factorial(five)}")
+
+
+    type TupleFamily[I <: Nat] <: Tuple = I match
+      case Zero.type => EmptyTuple
+      case Succ[prev] => Int *: TupleFamily[prev]
+
+    // не работает!!
+//    val myInductor = ind[TupleFamily](
+//      default = EmptyTuple,
+//      next = (prev: Nat, prevP: TupleFamily[prev.type]) =>
+//        (42 *: prevP).asInstanceOf[TupleFamily[Succ[prev.type]]]
+//    )
+//    
+//    val n0: Nat = zero
+//    val n1: Nat = succ(n0)
+//    val n2: Nat = succ(n1)
+//    
+//    val r0 = myInductor(n0)
+//    val r1 = myInductor(n1)
+//    val r2 = myInductor(n2)
+//    
+//    println(s"r0 = $r0")
+//    println(s"r1 = $r1")
+//    println(s"r2 = $r2")
+    println("==================================================")

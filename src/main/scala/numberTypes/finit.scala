@@ -1,7 +1,7 @@
 package numberTypes
 
 import numberTypes.sigmaTypes.*
-import numberTypes.indNatural.*
+import numberTypes.inductor.indNatural.*
 
 import scala.compiletime.{erasedValue, summonInline}
 

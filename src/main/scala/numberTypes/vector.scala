@@ -1,6 +1,6 @@
 package numberTypes
 
-import indNatural.*
+import numberTypes.inductor.indNatural.*
 
 object vector:
 

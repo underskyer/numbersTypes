@@ -1,4 +1,4 @@
-package numberTypes
+package numberTypes.inductor
 
 object natSigmaChirch:
 
@@ -60,9 +60,9 @@ object natSigmaChirch:
   // ============================================================================
 
   def ind[P[_ <: NatIdx]](
-                           vZero: P[ZeroIdx],
-                           vSucc: [I <: NatIdx] => (prev: Mu[NatForm, I], prevP: P[I]) => P[SuccIdx[I]]
-                         ): [I <: NatIdx] => (n: Nat[I]) => P[I] =
+    vZero: P[ZeroIdx],
+    vSucc: [I <: NatIdx] => (prev: Mu[NatForm, I], prevP: P[I]) => P[SuccIdx[I]]
+  ): [I <: NatIdx] => (n: Nat[I]) => P[I] =
     [I <: NatIdx] => (n: Nat[I]) =>
       def loop[K <: NatIdx](m: Mu[NatForm, K]): P[K] =
         val churchSigma = m.unfix

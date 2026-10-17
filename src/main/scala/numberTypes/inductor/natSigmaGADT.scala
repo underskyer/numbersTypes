@@ -1,5 +1,6 @@
-package numberTypes
+package numberTypes.inductor
 
+import numberTypes.*
 import numberTypes.sigmaTypes.*
 
 object natSigmaGADT:
@@ -40,8 +41,7 @@ object natSigmaGADT:
   type NatInductor = [P[_ <: NatIdx]]
     => (default: P[ZeroIdx], next: IndexedNatNext[P])
     => [I <: NatIdx]
-    => Nat[I]
-    => P[I]
+    => Nat[I] => P[I]
 
   val ind: NatInductor =
     [P[_ <: NatIdx]] => (default: P[ZeroIdx], next: IndexedNatNext[P]) => [I <: NatIdx] => (n: Nat[I]) =>

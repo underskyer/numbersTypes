@@ -35,6 +35,15 @@ case class Mu[IndType, F[Self[_ <: IndType], _ <: IndType], I <: IndType](
 
 type μμ[IndType] = [F[Self[_ <: IndType], _ <: IndType]] =>> [I <: IndType] =>> Mu[IndType, F, I]
 
+trait Σᴏᴏᴘ[IndexType, F[_ <: IndexType]]:
+  type I <: IndexType // первая проекция
+  //def index: I
+  val value: F[I] // вторая проекция
+
+object Σᴏᴏᴘ:
+  case class OOP[IndexType, F[_ <: IndexType], In <: IndexType](value: F[In]) extends Σᴏᴏᴘ[IndexType, F]:
+    type I = In
+
 
 // Базовые кирпичики
 object Zero

@@ -1,4 +1,5 @@
 import numberTypes.*
+import numberTypes.inductor.*
 
 @main
 def main() =
@@ -7,7 +8,6 @@ def main() =
   recNatural.test
   chirchNatural.test
   indNatural.test
-  wellFounded.test
 
   sigmaTypes.test
   finit.test
@@ -19,5 +19,7 @@ def main() =
   natPathDep.test
   piTypes.testPiIso
   recursor.test
-  
+  //natFixPathDep.test
+
+
 

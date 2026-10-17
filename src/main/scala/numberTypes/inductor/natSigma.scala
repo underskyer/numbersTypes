@@ -1,5 +1,6 @@
-package numberTypes
+package numberTypes.inductor
 
+import numberTypes.*
 import numberTypes.sigmaTypes.Σᴏᴏᴘ
 
 object natSigma:
@@ -12,36 +13,11 @@ object natSigma:
     case ZeroIdx extends NatIdx
     case SuccIdx[I <: NatIdx]() extends NatIdx
 
-  import NatIdx.{ZeroIdx, SuccIdx}
+  import NatIdx.{SuccIdx, ZeroIdx}
   type ZeroIdx = ZeroIdx.type
 
   type Bool = Boolean & Singleton
 
-  object NatIndexFix:
-    type N[B <: Bool] = [P, Succ[_]] =>> B match
-      case false => P
-      case true => Succ[P]
-
-    //type Succ = NatIdx.SuccIdx
-
-    type N0 = N[false][ZeroIdx, Option]
-    type N1 = N[true][N0, Option]
-    type N2 = N[true][N1, Option]
-    type N3 = N[true][N2, Option]
-
-    case class MuN[F[_[_ <: Bool], _ <: Bool], B <: Bool](
-      unfix: F[[X <: Bool] =>> MuN[F, X], B]
-    )
-
-    type μN[F[_[_ <: Bool], _ <: Bool]] = [B <: Bool] =>> MuN[F, B]
-
-    type NF[Self[_ <: Bool], B <: Bool] = B match
-      case false => Unit
-      case true => Self[Unit]
-
-    type NIdx = μN[NF]
-
-  end NatIndexFix
 
   // ============================================================================
   // 3. Чистый Натуральный Тип без ООП-надстроек (NatFunctor & NatTerm API)
