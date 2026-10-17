@@ -11,45 +11,45 @@ import DummyImports.*
 
 object indNatural:
 
-  enum Fix1[F[_]]:
-    case InFIx[G[_], V <: G[Fix1[G]]](unfix: V) extends Fix1[G]
+  enum μᵢ[F[_]]:
+    case In[G[_], V <: G[μᵢ[G]]](unfix: V) extends μᵢ[G]
 
   enum Σɢᴀᴅᴛ[IndexType, G[_ <: IndexType]]:
-    case ΣIn[I, F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
+    case In[I, F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
 
   type NatFamily[+Prev] = [B] =>> B match
     case false => Zero.type
     case true  => Succ[Prev]
 
   type NatFunctor[Prev] = Σɢᴀᴅᴛ[Bool, NatFamily[Prev]]
+  type ZeroΣ = Σɢᴀᴅᴛ.In[Bool, NatFamily[Nat], false]
+  type SuccΣ = Σɢᴀᴅᴛ.In[Bool, NatFamily[Nat], true]
 
-  type Nat = Fix1[NatFunctor]
 
-  // Алиас для типа "следующее число" на уровне типов, чтобы Match Type мог его разобрать
-  type SuccNat[P <: Nat] = Fix1.InFIx[NatFunctor, Σɢᴀᴅᴛ.ΣIn[Bool, NatFamily[Nat], true]]
+  type Nat = μᵢ[NatFunctor]
+  type NatZero =           μᵢ.In[NatFunctor, ZeroΣ]
+  type NatSucc[P <: Nat] = μᵢ.In[NatFunctor, SuccΣ]
 
-  val zero: Nat =
-    Fix1.InFIx[NatFunctor, Σɢᴀᴅᴛ[Bool, NatFamily[Nat]]](
-      Σɢᴀᴅᴛ.ΣIn[Bool, NatFamily[Nat], false](false, Zero)
+  val zero: NatZero = μᵢ.In(Σɢᴀᴅᴛ.In[Bool, NatFamily[Nat], false](false, Zero))
+
+  def succ[N <: Nat](n: N): Nat =
+    μᵢ.In[NatFunctor, SuccΣ](
+      Σɢᴀᴅᴛ.In[Bool, NatFamily[Nat], true](true, Succ(n))
     )
 
-  // Улучшаем сигнатуру типа возвращаемого значения, чтобы сохранить информацию о типе N
-  def succ[N <: Nat](n: N): Fix1.InFIx[NatFunctor, Σɢᴀᴅᴛ.ΣIn[Bool, NatFamily[Nat], true]] =
-    Fix1.InFIx[NatFunctor, Σɢᴀᴅᴛ.ΣIn[Bool, NatFamily[Nat], true]](
-      Σɢᴀᴅᴛ.ΣIn[Bool, NatFamily[Nat], true](true, Succ(n))
-    )
+  //type IndexedNatNext[P[_ <: NatIdx]] = [I <: NatIdx] => (prev: Nat[I], prevP: P[I]) => P[SuccIdx[I]]
+  type NatInductor = [C[_ <: Nat]]
+    => C[NatZero] => ((p: Nat) => C[p.type ] => C[Nat])
+    => (n: Nat) => C[n.type]
 
-  // Исправлена сигнатура: next теперь возвращает C[Nat] (или более точный тип),
-  // а внутренняя логика приведена в соответствие с каррированием.
+
   def ind[C[_ <: Nat]](
     default: C[zero.type],
     next: (p: Nat) => C[p.type] => C[Nat]
-  )(n: Nat): C[n.type] =
-    n match
-      case Fix1.InFIx(Σɢᴀᴅᴛ.ΣIn(false, _   )) => default.asInstanceOf[C[n.type]]
-      case Fix1.InFIx(Σɢᴀᴅᴛ.ΣIn(true, value)) =>
+  )(n: Nat): C[n.type] = n match
+      case μᵢ.In(Σɢᴀᴅᴛ.In(false, _   )) => default.asInstanceOf[C[n.type]]
+      case μᵢ.In(Σɢᴀᴅᴛ.In(true, value)) =>
         val p = value.asInstanceOf[Succ[Nat]].prev
-        // Вызываем каррированную функцию next
         next(p)(ind[C](default, next)(p)).asInstanceOf[C[n.type]]
 
   def rec[C] = ind[Const[C]]
@@ -64,12 +64,10 @@ object indNatural:
 
     private val factStateRec: Nat => FactState = rec[FactState](
       (0L, 1L),
-      p => state => {
-        val (currentLong, currentFact) = state
-        val nextLong = currentLong + 1L
-        val nextFact = currentFact * nextLong
-        (nextLong, nextFact)
-      }
+      _ => pair =>
+          val (currentLong, currentFact) = pair
+          val nextLong = currentLong + 1L
+          (nextLong, currentFact * nextLong)
     )
 
     val factorial: Nat => Long = n => factStateRec(n)._2
@@ -77,20 +75,15 @@ object indNatural:
     val five = succ(succ(succ(succ(succ(zero)))))
     println(s"индуктивный факториал: ${factorial(five)}")
 
-    // ИСПРАВЛЕННЫЙ MATCH TYPE:
-    // Вместо разбора внутренних внутренностей GADT, мы проверяем,
-    // является ли тип синглтоном нуля, либо "разворачиваем" его структуру.
-    type TupleFamily[I <: Nat] <: Tuple = I match
-      case zero.type => EmptyTuple
-      // Если это тип, возвращенный функцией succ, мы можем безопасно извлечь его составные части
-      case Fix1.InFIx[NatFunctor, Σɢᴀᴅᴛ.ΣIn[Bool, NatFamily[Nat], true]] =>
-        Int *: TupleFamily[Nat]
 
-    // ИСПРАВЛЕННЫЙ ВЫЗОВ: Применяем каррирование в `next` (p => prevP => ...)
+
+    type TupleFamily[I <: Nat] <: Tuple = I match
+      case NatZero    => EmptyTuple
+      case NatSucc[p] => Int *: TupleFamily[p]
+
     val myInductor = ind[TupleFamily](
       default = EmptyTuple,
-      next = (prev: Nat) => (prevP: TupleFamily[prev.type]) =>
-        (42 *: prevP).asInstanceOf[TupleFamily[Nat]]
+      next = prev => prevP => (42 *: prevP).asInstanceOf[TupleFamily[Nat]]
     )
 
     val n0 = zero

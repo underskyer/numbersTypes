@@ -25,12 +25,12 @@ object natSigmaGADT:
   object Nat:
     def zero: Nat[ZeroIdx] =
       Mu[NatIdx, NatFunctor, ZeroIdx](
-        Σin[Bool, NatFamily[Nat, ZeroIdx], true](())
+        inΣ[Bool, NatFamily[Nat, ZeroIdx], true](())
       )
 
     def succ[I <: NatIdx](n: Nat[I]): Nat[SuccIdx[I]] =
       Mu[NatIdx, NatFunctor, SuccIdx[I]](
-        Σin[Bool, NatFamily[Nat, I], false](n)
+        inΣ[Bool, NatFamily[Nat, I], false](n)
       )
 
   // ============================================================================
@@ -46,8 +46,8 @@ object natSigmaGADT:
   val ind: NatInductor =
     [P[_ <: NatIdx]] => (default: P[ZeroIdx], next: IndexedNatNext[P]) => [I <: NatIdx] => (n: Nat[I]) =>
       def loop[K <: NatIdx]: Nat[K] => P[K] =
-        case Mu(ΣIn(true , _ )) => default.asInstanceOf[P[K]]
-        case Mu(ΣIn(false, fi)) =>
+        case Mu(Σɢᴀᴅᴛ.In(true , _ )) => default.asInstanceOf[P[K]]
+        case Mu(Σɢᴀᴅᴛ.In(false, fi)) =>
           val prevTerm = fi.asInstanceOf[Nat[NatIdx]]
           next(prevTerm, loop(prevTerm)).asInstanceOf[P[K]]
 

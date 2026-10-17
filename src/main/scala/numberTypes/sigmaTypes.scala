@@ -85,11 +85,10 @@ object sigmaTypes:
   //    	между параметрами типа кейса In и внешним match-type,
   //    	из-за чего приходится использовать asInstanceOf.
   enum Σɢᴀᴅᴛ[IndexType, G[_ <: IndexType]]: //
-    case ΣIn[I, F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
-  export Σɢᴀᴅᴛ.ΣIn
+    case In[I, F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
 
-  inline def Σin[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): Σɢᴀᴅᴛ[I, F] =
-    Σɢᴀᴅᴛ.ΣIn[I, F, i](summon[ValueOf[i]].value, fi)
+  inline def inΣ[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): Σɢᴀᴅᴛ[I, F] =
+    Σɢᴀᴅᴛ.In[I, F, i](summon[ValueOf[i]].value, fi)
 
   type ∑ = Σɢᴀᴅᴛ
 
@@ -103,12 +102,12 @@ object sigmaTypes:
 
     def sumIso[A, B]: (A + B) ≅ Sum[A, B] = (
       forward = _.fold[Sum[A, B]](
-        Σin[Bool, Pair[A, B], false],
-        Σin[Bool, Pair[A, B], true]
+        inΣ[Bool, Pair[A, B], false],
+        inΣ[Bool, Pair[A, B], true]
       ),
       backward =
-        case ΣIn(false, a: A) => Left(a)
-        case ΣIn(true,  b: B) => Right(b)
+        case Σɢᴀᴅᴛ.In(false, a: A) => Left(a)
+        case Σɢᴀᴅᴛ.In(true,  b: B) => Right(b)
     )
 
     val iso = sumIso[Int, String]
@@ -117,8 +116,8 @@ object sigmaTypes:
 
     type ProdΣ[A, B] = ∑[A, Const[B]]
     def prodΣIso[A, B]: (A × B) ≅ ProdΣ[A, B] = (
-      forward = ΣIn[A, Const[B], A].tupled,
-      backward = { case ΣIn(a: A, b: B) => a -> b }
+      forward = Σɢᴀᴅᴛ.In[A, Const[B], A].tupled,
+      backward = { case Σɢᴀᴅᴛ.In(a: A, b: B) => a -> b }
     )
 
 
