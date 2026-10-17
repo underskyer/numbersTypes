@@ -15,15 +15,13 @@ type Pair[A, B] = [R <: Bool] =>> R match
   case true => B
 
 
-infix type ≅[A, B] = (
-  forward : A => B,
-  backward: B => A
-)
-
 type μ[F[_]] = Algebra[F] ~> Id
 def cata[F[_]]: Algebra[F] ~> (μ[F] => *) = [A] => alg => _(alg)
 
 case class Fix[F[_]](unfix: F[Fix[F]])
+
+enum μᵢ[F[_]]:
+  case In[G[_], V <: G[μᵢ[G]]](unfix: V) extends μᵢ[G]
 
 
 // ============================================================================
@@ -42,7 +40,7 @@ trait Σᴏᴏᴘ[IndexType, F[_ <: IndexType]]:
   val value: F[I] // вторая проекция
 
 object Σᴏᴏᴘ:
-  case class OOP[IndexType, F[_ <: IndexType], In <: IndexType](value: F[In]) extends Σᴏᴏᴘ[IndexType, F]:
+  case class In[IndexType, F[_ <: IndexType], In <: IndexType](value: F[In]) extends Σᴏᴏᴘ[IndexType, F]:
     type I = In
 
 
@@ -53,17 +51,17 @@ case class Succ[+Prev](prev: Prev)
 
 
 infix type ~[A, B] = (
-  to:   A => B,
-  from: B => A
+  forward:  A => B,
+  backward: B => A
 )
 
 object Iso extends LowPriority:
   given convFromIso1: [A, B] =>(iso: A ~ B) => Conversion[A, B] = new:
-    def apply(a: A) = iso.to(a)
+    def apply(a: A) = iso.forward(a)
 
 trait LowPriority:
   given convFromIso2: [A, B] =>(iso: A ~ B) => Conversion[B, A] = new:
-    def apply(b: B) = iso.from(b)
+    def apply(b: B) = iso.backward(b)
 
 sealed trait DepType[Tag, A]:
   val a: A

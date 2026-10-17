@@ -1,21 +1,12 @@
 package numberTypes.inductor
 
-// Эмуляция внешних импортов для автономности примера
-object DummyImports:
-  type Bool = Boolean
-  object Zero
-  case class Succ[+P](prev: P)
-  type Const[A] = [X] =>> A
+import numberTypes.*
+import numberTypes.sigmaTypes.Σɢᴀᴅᴛ
 
-import DummyImports.*
 
 object indNatural:
 
-  enum μᵢ[F[_]]:
-    case In[G[_], V <: G[μᵢ[G]]](unfix: V) extends μᵢ[G]
 
-  enum Σɢᴀᴅᴛ[IndexType, G[_ <: IndexType]]:
-    case In[I, F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
 
   type NatFamily[+Prev] = [B] =>> B match
     case false => Zero.type

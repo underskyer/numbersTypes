@@ -100,7 +100,7 @@ object sigmaTypes:
 
     type Sum[A, B] = ∑[Bool, Pair[A, B]]
 
-    def sumIso[A, B]: (A + B) ≅ Sum[A, B] = (
+    def sumIso[A, B]: (A + B) ~ Sum[A, B] = (
       forward = _.fold[Sum[A, B]](
         inΣ[Bool, Pair[A, B], false],
         inΣ[Bool, Pair[A, B], true]
@@ -115,7 +115,7 @@ object sigmaTypes:
     println("sum iso right: " + iso.backward(iso.forward(Right[Int, String]("str: 42"))))
 
     type ProdΣ[A, B] = ∑[A, Const[B]]
-    def prodΣIso[A, B]: (A × B) ≅ ProdΣ[A, B] = (
+    def prodΣIso[A, B]: (A × B) ~ ProdΣ[A, B] = (
       forward = Σɢᴀᴅᴛ.In[A, Const[B], A].tupled,
       backward = { case Σɢᴀᴅᴛ.In(a: A, b: B) => a -> b }
     )

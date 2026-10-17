@@ -7,6 +7,9 @@ object piTypes:
 
   // Настоящий Пи-тип на уровне типов (принимает тип I и возвращает F[I])
   type Π[Index, F[_ <: Index]] = [I <: Index] => () => F[I]
+  
+  extension [Index, F[_ <: Index]](f: Π[Index, F])
+    def apply[I <: Index] = f[I]()
 
 
   object testPi:
@@ -39,7 +42,7 @@ object piTypes:
 
 
     type ProdΠ[A, B] = ∏[Bool, Pair[A, B]]
-    def prodΠIso[A, B]: (A × B) ≅ ProdΠ[A, B] = (
+    def prodΠIso[A, B]: (A × B) ~ ProdΠ[A, B] = (
       forward = ab =>
         case _: false => ab._1
         case _: true  => ab._2,
@@ -47,7 +50,7 @@ object piTypes:
     )
 
     type Exp[A, B] = ∏[A, Const[B]]
-    def expIso[A, B]: (A => B) ≅ Exp[A, B] = (
+    def expIso[A, B]: (A => B) ~ Exp[A, B] = (
       forward = identity,
       backward = f => f(_)
     )
