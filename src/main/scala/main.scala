@@ -20,6 +20,7 @@ def main() =
   piTypes.testPiIso
   recursor.test
   //natFixPathDep.test
+  natWellFounded.test
 
 
 

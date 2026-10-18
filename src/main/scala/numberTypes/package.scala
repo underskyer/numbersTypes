@@ -20,8 +20,8 @@ def cata[F[_]]: Algebra[F] ~> (μ[F] => *) = [A] => alg => _(alg)
 
 case class Fix[F[_]](unfix: F[Fix[F]])
 
-enum μᵢ[F[_]]:
-  case In[G[_], V <: G[μᵢ[G]]](unfix: V) extends μᵢ[G]
+enum μᵢ[+F[+_]]:
+  case In[+G[+_], +V <: G[μᵢ[G]]](unfix: V) extends μᵢ[G]
 
 
 // ============================================================================
@@ -62,18 +62,4 @@ object Iso extends LowPriority:
 trait LowPriority:
   given convFromIso2: [A, B] =>(iso: A ~ B) => Conversion[B, A] = new:
     def apply(b: B) = iso.backward(b)
-
-sealed trait DepType[Tag, A]:
-  val a: A
-  type B
-
-type Dep[Tag] = [A] =>> DepType[Tag, A]#B
-
-val a = new DepType[Nothing, Int]:
-  val a = 42
-  type B = String
-
-val b: a.B = "sas"
-
-
 

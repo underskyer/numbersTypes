@@ -12,7 +12,7 @@ object indNatural:
     case false => Zero.type
     case true  => Succ[Prev]
 
-  type NatFunctor[Prev] = Σɢᴀᴅᴛ[Bool, NatFamily[Prev]]
+  type NatFunctor[+Prev] = Σɢᴀᴅᴛ[Bool, NatFamily[Prev]]
   type ZeroΣ = Σɢᴀᴅᴛ.In[Bool, NatFamily[Nat], false]
   type SuccΣ = Σɢᴀᴅᴛ.In[Bool, NatFamily[Nat], true]
 
@@ -55,7 +55,7 @@ object indNatural:
 
     private val factStateRec: Nat => FactState = rec[FactState](
       (0L, 1L),
-      _ => pair =>
+      _ => (pair: FactState) =>
           val (currentLong, currentFact) = pair
           val nextLong = currentLong + 1L
           (nextLong, currentFact * nextLong)

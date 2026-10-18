@@ -84,8 +84,8 @@ object sigmaTypes:
   //    	Компилятору сложнее протащить точную связь
   //    	между параметрами типа кейса In и внешним match-type,
   //    	из-за чего приходится использовать asInstanceOf.
-  enum Σɢᴀᴅᴛ[IndexType, G[_ <: IndexType]]: //
-    case In[I, F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
+  enum Σɢᴀᴅᴛ[IndexType, +G[_ <: IndexType]]: //
+    case In[I, +F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
 
   inline def inΣ[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): Σɢᴀᴅᴛ[I, F] =
     Σɢᴀᴅᴛ.In[I, F, i](summon[ValueOf[i]].value, fi)
