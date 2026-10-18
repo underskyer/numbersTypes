@@ -32,8 +32,10 @@ object natWellFounded:
         case true  =>
           val pred = branches(i)(().asInstanceOf[NatArity[i.type]])
           val predIH = ih(pred)
-          next(pred)(predIH).asInstanceOf[C[Nat]]
-    )//.asInstanceOf[(n: Nat) => C[n.type]]
+          next(pred)(predIH)
+    )
+
+    def rec[C] = ind[Const[C]]
 
   object test:
 
@@ -77,6 +79,41 @@ object natWellFounded:
     println(s"r0 = $r0") // EmptyTuple
     println(s"r1 = $r1") // (42)
     println(s"r2 = $r2") // (42, 42)
+
+    println("--------------------------------------------------")
+
+    // ===== Числа Фибоначчи =====
+    // Состояние: (fib(k), fib(k+1), накопленный кортеж длины k)
+    type FibState[N <: Nat] = (Int, Int, TupleFamily[N])
+
+    val fibInductor = Nat.ind[FibState](
+      default = (0, 1, EmptyTuple),
+      next = prev => prevState =>
+        val a = prevState._1 // fib(k)
+        val b = prevState._2 // fib(k+1)
+        val tup = prevState._3 // кортеж длины k (в обратном порядке)
+        // следующий шаг: (fib(k+1), fib(k)+fib(k+1), fib(k+1) *: tup)
+        (b, a + b, (b *: tup).asInstanceOf[TupleFamily[Nat]])
+    )
+
+    // Печать кортежа в естественном порядке (разворачиваем накопленный)
+    def showTupleNatural(t: Tuple): String =
+      t.productIterator.toList.reverse.mkString("(", ", ", ")")
+
+    val n3 = Nat.succ(n2)
+    val n4 = Nat.succ(n3)
+    val n5 = Nat.succ(n4)
+    val n6 = Nat.succ(n5)
+
+    println("--- Числа Фибоначчи ---")
+    println(s"f0 = ${showTupleNatural(fibInductor(n0)._3)}") // ()
+    println(s"f1 = ${showTupleNatural(fibInductor(n1)._3)}") // (1)
+    println(s"f2 = ${showTupleNatural(fibInductor(n2: Nat)._3)}") // (1, 1)
+    println(s"f3 = ${showTupleNatural(fibInductor(n3: Nat)._3)}") // (1, 1, 2)
+    println(s"f4 = ${showTupleNatural(fibInductor(n4: Nat)._3)}") // (1, 1, 2, 3)
+    println(s"f5 = ${showTupleNatural(fibInductor(n5: Nat)._3)}") // (1, 1, 2, 3, 5)
+    println(s"f6 = ${showTupleNatural(fibInductor(n6: Nat)._3)}") // (1, 1, 2, 3, 5, 8)
+
     println("==================================================")
 
   end test
