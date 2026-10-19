@@ -7,6 +7,7 @@ infix type +[A, B] = A Either B
 
 infix type ~>[F[_], G[_]] = [A] => F[A] => G[A]
 type Algebra[F[_]] = [A] =>> F[A] => A
+type Coalgebra[F[_]] = [A] =>> A => F[A]
 type Id[A] = A
 type Const[A] = [X] =>> A
 
@@ -22,6 +23,16 @@ case class Fix[F[_]](unfix: F[Fix[F]])
 
 enum μᵢ[+F[+_]]:
   case In[+G[+_], +V <: G[μᵢ[G]]](unfix: V) extends μᵢ[G]
+
+object μᵢ:
+  def cata[F[+_], A](step: F[μᵢ[F]] => (μᵢ[F] => A) => A): (w: μᵢ[F]) => A =
+    def go: μᵢ[F] => A = { case In(v) => step(v)(go) }
+    go
+  
+  extension [F[+_]] (fix: μᵢ[F])
+    inline def fold[A](step: F[μᵢ[F]] => (μᵢ[F] => A) => A): A =
+      cata[F, A](step)(fix)
+
 
 // \mathbf{\nu}
 trait 𝛎[+F[+_]]:
