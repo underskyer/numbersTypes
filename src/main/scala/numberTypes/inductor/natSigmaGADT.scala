@@ -9,7 +9,7 @@ object natSigmaGADT:
   final class ZeroIdx              private extends NatIdx
   final class SuccIdx[I <: NatIdx] private extends NatIdx
 
-  type NatFamily[NextLayer[_ <: NatIdx], I <: NatIdx] = [b <: Bool] =>> b match
+  type NatFamily[NextLayer[_ <: NatIdx], I <: NatIdx] = [b <: 𝔹] =>> b match
     case true => Unit
     case false => NextLayer[I]
 
@@ -18,19 +18,19 @@ object natSigmaGADT:
     case SuccIdx[prev] => prev
 
   type NatFunctor[NextLayer[_ <: NatIdx], I <: NatIdx] =
-    ∑[Bool, NatFamily[NextLayer, PredIdx[I]]]
+    ∑[𝔹, NatFamily[NextLayer, PredIdx[I]]]
 
   type Nat = μμ[NatIdx][NatFunctor]
 
   object Nat:
     def zero: Nat[ZeroIdx] =
       Mu[NatIdx, NatFunctor, ZeroIdx](
-        inΣ[Bool, NatFamily[Nat, ZeroIdx], true](())
+        inΣ[𝔹, NatFamily[Nat, ZeroIdx], true](())
       )
 
     def succ[I <: NatIdx](n: Nat[I]): Nat[SuccIdx[I]] =
       Mu[NatIdx, NatFunctor, SuccIdx[I]](
-        inΣ[Bool, NatFamily[Nat, I], false](n)
+        inΣ[𝔹, NatFamily[Nat, I], false](n)
       )
 
   // ============================================================================

@@ -6,29 +6,29 @@ import numberTypes.wellFounded.*
 
 object natWellFounded:
 
-  type NatArity[A <: Bool] = A match
+  type NatArity[I <: 𝔹] = I match
     case false => Nothing
     case true  => Unit
-  type Nat = W[Bool, NatArity]
+  type ℕ = 𝕎[𝔹, NatArity]
 
-  type NatZero           = μᵢ.In[PolynomialFunctor[Bool, NatArity], Σɢᴀᴅᴛ.In[Bool, Branches[Bool, NatArity, Nothing], false]]
-  type NatSucc[N <: Nat] = μᵢ.In[PolynomialFunctor[Bool, NatArity], Σɢᴀᴅᴛ.In[Bool, Branches[Bool, NatArity, N      ], true ]]
+  type NatZero         = μᵢ.In[PolynomialFunctor[𝔹, NatArity], Σɢᴀᴅᴛ.In[𝔹, Branches[𝔹, NatArity, Nothing], false]]
+  type NatSucc[N <: ℕ] = μᵢ.In[PolynomialFunctor[𝔹, NatArity], Σɢᴀᴅᴛ.In[𝔹, Branches[𝔹, NatArity, N      ], true ]]
 
   // todo не работает!!
-  type NatPrev[N <: Nat] <: Nat = N match
+  type NatPrev[N <: ℕ] <: ℕ = N match
     case NatZero => Nothing
-    case μᵢ.In[PolynomialFunctor[Bool, NatArity], Σɢᴀᴅᴛ.In[Bool, Branches[Bool, NatArity, p], true]] => p & Nat
+    case μᵢ.In[PolynomialFunctor[𝔹, NatArity], Σɢᴀᴅᴛ.In[𝔹, Branches[𝔹, NatArity, p], true]] => p & ℕ
 
-  object Nat:
-    val zero: NatZero = W.sup[Bool, NatArity, Nothing, false](false, _ => identity[Nothing])
-    def succ[N <: Nat](n: N): NatSucc[N] = W.sup[Bool, NatArity, N, true ](true, _ => _ => n)
+  object ℕ:
+    val zero: NatZero = 𝕎.sup[𝔹, NatArity, Nothing, false](false, _ => identity[Nothing])
+    def succ[N <: ℕ](n: N): NatSucc[N] = 𝕎.sup[𝔹, NatArity, N, true ](true, _ => _ => n)
 
-    def ind[C[_ <: Nat]](
+    def ind[C[_ <: ℕ]](
       default: C[NatZero],
-      next: (p: Nat) => C[p.type] => C[Nat]
-    ): (n: Nat) => C[n.type] = W.ind[Bool, NatArity, C](
-      [I <: Bool] => i => branches => ih => i match
-        case false => default.asInstanceOf[C[Nat]]
+      next: (p: ℕ) => C[p.type] => C[ℕ]
+    ): (n: ℕ) => C[n.type] = 𝕎.ind[𝔹, NatArity, C](
+      [I <: 𝔹] => i => branches => ih => i match
+        case false => default.asInstanceOf[C[ℕ]]
         case true  =>
           val pred = branches(i)(().asInstanceOf[NatArity[i.type]])
           val predIH = ih(pred)
@@ -43,38 +43,38 @@ object natWellFounded:
     println("         ФУНДИРОВАННЫЕ НАТУРАЛЬНЫЕ ЧИСЛА          ")
     println("==================================================")
 
-    type TupleFamily[I <: Nat] <: Tuple = I match
+    type TupleFamily[I <: ℕ] <: Tuple = I match
       case NatZero => EmptyTuple
       case NatSucc[p] => Int *: TupleFamily[p]
 
     // рабочий индуктор!!
-    def myInductor1 = W.ind[Bool, NatArity, TupleFamily](
-      [I <: Bool] => b => branches => ih => b match
+    def myInductor1 = 𝕎.ind[𝔹, NatArity, TupleFamily](
+      [I <: 𝔹] => b => branches => ih => b match
         //case false => EmptyTuple
         //case true  => 42 *: ih(branches(b)(()))
-        case false => EmptyTuple.asInstanceOf[TupleFamily[Nat]]
+        case false => EmptyTuple.asInstanceOf[TupleFamily[ℕ]]
         case true  =>
           val prevNat = branches(b)(().asInstanceOf[NatArity[b.type]])
           val prevP = ih(prevNat)
-          (42 *: prevP).asInstanceOf[TupleFamily[Nat]]
-    ).asInstanceOf[(n: Nat) => TupleFamily[n.type]]
+          (42 *: prevP).asInstanceOf[TupleFamily[ℕ]]
+    ).asInstanceOf[(n: ℕ) => TupleFamily[n.type]]
 
-    val myInductor = Nat.ind[TupleFamily](
+    val myInductor = ℕ.ind[TupleFamily](
       default = EmptyTuple,
-      next = prev => prevP => (42 *: prevP).asInstanceOf[TupleFamily[Nat]]
+      next = prev => prevP => (42 *: prevP).asInstanceOf[TupleFamily[ℕ]]
     )
 
-    val n0 = Nat.zero
-    val n1 = Nat.succ(n0)
-    val n2: NatSucc[NatSucc[NatZero]] = Nat.succ(n1)
+    val n0 = ℕ.zero
+    val n1 = ℕ.succ(n0)
+    val n2: NatSucc[NatSucc[NatZero]] = ℕ.succ(n1)
 
-    summon[NatSucc[NatZero] <:< Nat]
-    summon[NatSucc[NatSucc[NatZero]] <:< Nat]
-    summon[NatSucc[NatSucc[NatZero]] <:< Nat]
+    summon[NatSucc[NatZero] <:< ℕ]
+    summon[NatSucc[NatSucc[NatZero]] <:< ℕ]
+    summon[NatSucc[NatSucc[NatZero]] <:< ℕ]
 
     val r0 = myInductor(n0)
-    val r1 = myInductor(n1: Nat)
-    val r2 = myInductor(n2: Nat)
+    val r1 = myInductor(n1: ℕ)
+    val r2 = myInductor(n2: ℕ)
 
     println(s"r0 = $r0") // EmptyTuple
     println(s"r1 = $r1") // (42)
@@ -84,35 +84,35 @@ object natWellFounded:
 
     // ===== Числа Фибоначчи =====
     // Состояние: (fib(k), fib(k+1), накопленный кортеж длины k)
-    type FibState[N <: Nat] = (Int, Int, TupleFamily[N])
+    type FibState[N <: ℕ] = (Int, Int, TupleFamily[N])
 
-    val fibInductor = Nat.ind[FibState](
+    val fibInductor = ℕ.ind[FibState](
       default = (0, 1, EmptyTuple),
       next = prev => prevState =>
         val a = prevState._1 // fib(k)
         val b = prevState._2 // fib(k+1)
         val tup = prevState._3 // кортеж длины k (в обратном порядке)
         // следующий шаг: (fib(k+1), fib(k)+fib(k+1), fib(k+1) *: tup)
-        (b, a + b, (b *: tup).asInstanceOf[TupleFamily[Nat]])
+        (b, a + b, (b *: tup).asInstanceOf[TupleFamily[ℕ]])
     )
 
     // Печать кортежа в естественном порядке (разворачиваем накопленный)
     def showTupleNatural(t: Tuple): String =
       t.productIterator.toList.reverse.mkString("(", ", ", ")")
 
-    val n3 = Nat.succ(n2)
-    val n4 = Nat.succ(n3)
-    val n5 = Nat.succ(n4)
-    val n6 = Nat.succ(n5)
+    val n3 = ℕ.succ(n2)
+    val n4 = ℕ.succ(n3)
+    val n5 = ℕ.succ(n4)
+    val n6 = ℕ.succ(n5)
 
     println("--- Числа Фибоначчи ---")
     println(s"f0 = ${showTupleNatural(fibInductor(n0)._3)}") // ()
     println(s"f1 = ${showTupleNatural(fibInductor(n1)._3)}") // (1)
-    println(s"f2 = ${showTupleNatural(fibInductor(n2: Nat)._3)}") // (1, 1)
-    println(s"f3 = ${showTupleNatural(fibInductor(n3: Nat)._3)}") // (1, 1, 2)
-    println(s"f4 = ${showTupleNatural(fibInductor(n4: Nat)._3)}") // (1, 1, 2, 3)
-    println(s"f5 = ${showTupleNatural(fibInductor(n5: Nat)._3)}") // (1, 1, 2, 3, 5)
-    println(s"f6 = ${showTupleNatural(fibInductor(n6: Nat)._3)}") // (1, 1, 2, 3, 5, 8)
+    println(s"f2 = ${showTupleNatural(fibInductor(n2: ℕ)._3)}") // (1, 1)
+    println(s"f3 = ${showTupleNatural(fibInductor(n3: ℕ)._3)}") // (1, 1, 2)
+    println(s"f4 = ${showTupleNatural(fibInductor(n4: ℕ)._3)}") // (1, 1, 2, 3)
+    println(s"f5 = ${showTupleNatural(fibInductor(n5: ℕ)._3)}") // (1, 1, 2, 3, 5)
+    println(s"f6 = ${showTupleNatural(fibInductor(n6: ℕ)._3)}") // (1, 1, 2, 3, 5, 8)
 
     println("==================================================")
 

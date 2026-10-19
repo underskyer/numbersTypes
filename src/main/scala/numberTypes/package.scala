@@ -1,6 +1,6 @@
 package numberTypes
 
-type Bool = Boolean & Singleton
+type 𝔹 = Boolean & Singleton
 
 infix type ×[A, B] = (A, B)
 infix type +[A, B] = A Either B
@@ -10,7 +10,7 @@ type Algebra[F[_]] = [A] =>> F[A] => A
 type Id[A] = A
 type Const[A] = [X] =>> A
 
-type Pair[A, B] = [R <: Bool] =>> R match
+type Pair[A, B] = [R <: 𝔹] =>> R match
   case false => A
   case true => B
 
@@ -22,6 +22,10 @@ case class Fix[F[_]](unfix: F[Fix[F]])
 
 enum μᵢ[+F[+_]]:
   case In[+G[+_], +V <: G[μᵢ[G]]](unfix: V) extends μᵢ[G]
+
+// \mathbf{\nu}
+trait 𝛎[+F[+_]]:
+  def out: F[𝛎[F]]
 
 
 // ============================================================================

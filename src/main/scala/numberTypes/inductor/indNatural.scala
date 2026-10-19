@@ -12,20 +12,20 @@ object indNatural:
     case false => Zero.type
     case true  => Succ[Prev]
 
-  type NatFunctor[+Prev] = Σɢᴀᴅᴛ[Bool, NatFamily[Prev]]
-  type ZeroΣ = Σɢᴀᴅᴛ.In[Bool, NatFamily[Nat], false]
-  type SuccΣ = Σɢᴀᴅᴛ.In[Bool, NatFamily[Nat], true]
+  type NatFunctor[+Prev] = Σɢᴀᴅᴛ[𝔹, NatFamily[Prev]]
+  type ZeroΣ = Σɢᴀᴅᴛ.In[𝔹, NatFamily[Nat], false]
+  type SuccΣ = Σɢᴀᴅᴛ.In[𝔹, NatFamily[Nat], true]
 
 
   type Nat = μᵢ[NatFunctor]
   type NatZero =           μᵢ.In[NatFunctor, ZeroΣ]
   type NatSucc[P <: Nat] = μᵢ.In[NatFunctor, SuccΣ]
 
-  val zero: NatZero = μᵢ.In(Σɢᴀᴅᴛ.In[Bool, NatFamily[Nat], false](false, Zero))
+  val zero: NatZero = μᵢ.In(Σɢᴀᴅᴛ.In[𝔹, NatFamily[Nat], false](false, Zero))
 
   def succ[N <: Nat](n: N): Nat =
     μᵢ.In[NatFunctor, SuccΣ](
-      Σɢᴀᴅᴛ.In[Bool, NatFamily[Nat], true](true, Succ(n))
+      Σɢᴀᴅᴛ.In[𝔹, NatFamily[Nat], true](true, Succ(n))
     )
 
   //type IndexedNatNext[P[_ <: NatIdx]] = [I <: NatIdx] => (prev: Nat[I], prevP: P[I]) => P[SuccIdx[I]]

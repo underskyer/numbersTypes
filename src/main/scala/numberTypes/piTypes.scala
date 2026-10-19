@@ -2,12 +2,10 @@ package numberTypes
 
 object piTypes:
 
-  // Класс-оболочка (по желанию, для явного именования типа)
+  // ℿ
   type ∏[Index, F[_ <: Index]] = (i: Index) => F[i.type]
-
-  // Настоящий Пи-тип на уровне типов (принимает тип I и возвращает F[I])
   type Π[Index, F[_ <: Index]] = [I <: Index] => () => F[I]
-  
+
   extension [Index, F[_ <: Index]](f: Π[Index, F])
     def apply[I <: Index] = f[I]()
 
@@ -41,7 +39,7 @@ object piTypes:
   object testPiIso:
 
 
-    type ProdΠ[A, B] = ∏[Bool, Pair[A, B]]
+    type ProdΠ[A, B] = ∏[𝔹, Pair[A, B]]
     def prodΠIso[A, B]: (A × B) ~ ProdΠ[A, B] = (
       forward = ab =>
         case _: false => ab._1
