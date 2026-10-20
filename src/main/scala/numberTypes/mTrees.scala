@@ -1,7 +1,7 @@
 package numberTypes
 
 import numberTypes.sigmaTypes.Σɢᴀᴅᴛ
-import numberTypes.wellFounded.{Branches, PolynomialFunctor}
+import numberTypes.wellFounded.{Branches, Polynomial}
 
 object mTrees:
 
@@ -11,8 +11,17 @@ object mTrees:
   type Branches[Index, F[_ <: Index], +Y] = [I <: Index] =>>
     (i: I) => F[i.type] => Y
 
-  type PolynomialFunctor[Index, F[_ <: Index]] =
+  type Polynomial[Index, F[_ <: Index]] =
     [Y] =>> Σɢᴀᴅᴛ[Index, Branches[Index, F, Y]]
+
+  given [Index, F[_ <: Index]]: Functor[Polynomial[Index, F]] =
+    [A, B] => (f: A => B) => (p: Polynomial[Index, F][A]) =>
+      p match
+        case Σɢᴀᴅᴛ.In(i, br) =>
+          Σɢᴀᴅᴛ.In[Index, Branches[Index, F, B], i.type](
+            i,
+            (k: i.type) => (b: F[k.type]) => f(br(k)(b))
+          )
 
   type Functor[F[+_]] = [A, B] => (A => B) => (F[A] => F[B])
 
@@ -24,7 +33,7 @@ object mTrees:
       s => new:
         def out: F[𝛎[F]] = fmap(unfold(f))(f(s))
 
-  type 𝕄[Index, F[_ <: Index]] = 𝛎[PolynomialFunctor[Index, F]]
+  type 𝕄[Index, F[_ <: Index]] = 𝛎[Polynomial[Index, F]]
 
 
 
@@ -35,41 +44,54 @@ object mTrees:
       i: I,
       br: Branches[Index, F, 𝕄[Index, F]][I]
     ): 𝕄[Index, F] =
-      new 𝛎[PolynomialFunctor[Index, F]]:
+      new 𝛎[Polynomial[Index, F]]:
         val out = Σɢᴀᴅᴛ.In[Index, Branches[Index, F, 𝕄[Index, F]], I](i, br)
 
-    // Элиминатор (наблюдатель / ко-паттерн)
-    def out[Index, F[_ <: Index]](m: 𝕄[Index, F]): PolynomialFunctor[Index, F][𝕄[Index, F]] =
-      m.out
-
-    // Коитерация (терминальность ν): анаморфизм из любого coalgebra
     def unfold[Index, F[_ <: Index], X](
-      step: X => PolynomialFunctor[Index, F][X]
+      step: Coalgebra[Polynomial[Index, F]][X]
     ): X => 𝕄[Index, F] =
       lazy val go: X => 𝕄[Index, F] = step(_) match
         case Σɢᴀᴅᴛ.In(i, br) => sup[Index, F, i.type](i, (k: i.type) => (b: F[k.type]) => go(br(k)(b)))
       go
 
+    type DepCoalgebra[Index, F[_ <: Index], X[_ <: Index]] =
+      [I <: Index] => (i: I) => X[i.type] =>
+        ((k: i.type) => F[k.type] => X[k.type])
 
-    def coind[Index, F[_ <: Index], S, P[_ <: S]](
-      step: (s: S) => P[s.type] =>
-        Σɢᴀᴅᴛ[Index, Branches[Index, F, Σɢᴀᴅᴛ[S, P]]]
-    ): (s: S) => P[s.type] => 𝕄[Index, F] = ???
+    trait DepPair[Index, X[_ <: Index]]:
+      type I <: Index
+      val i: I
+      val x: X[i.type]
 
-//    // коалгебра над состоянием (s, p)
-//    val γ: Coalgebra[PolynomialFunctor[Index, F]][Σɢᴀᴅᴛ[S, [I <: S] =>> [i <: I] =>> P[i]]] =
-//      case Σɢᴀᴅᴛ.In(s, p) =>
-//        step(s)(p) match
-//          case Σɢᴀᴅᴛ.In(i, fi) =>
-//            Σɢᴀᴅᴛ.In(i, (a: F[i.type]) => fi(a))
-//    // и развёртка:
-//    (s, p) => 𝛎.unfold(γ)(Σɢᴀᴅᴛ.In(s, p))
+    // Мотив для независимого корекурсора
+    type ΣState[Index, X] = [I <: Index] =>> I × X
+
+    def dunfold[Index, F[_ <: Index], X[_ <: Index]](
+      step: DepCoalgebra[Index, F, X]
+    ): [I <: Index] => (i: I) => X[i.type] => 𝕄[Index, F] =
+      val coalg: Coalgebra[Polynomial[Index, F]][DepPair[Index, X]] =
+        (s: DepPair[Index, X]) =>
+          Σɢᴀᴅᴛ.In[Index, Branches[Index, F, DepPair[Index, X]], s.i.type](
+            s.i,
+            (k: s.i.type) => (b: F[k.type]) =>
+              val x2 = step[s.I](s.i)(s.x)(k)(b)
+              new DepPair[Index, X]:
+                type I = k.type
+                val i = k
+                val x = x2
+          )
+      val go = 𝛎.unfold[Polynomial[Index, F], DepPair[Index, X]](coalg)
+      [J <: Index] => j => x => go(new DepPair[Index, X]:
+        type I = j.type
+        val i = j
+        val x = x
+      )
 
 //    def coind[Index, F[_ <: Index], X, P[_ <: X]](
 //      step: (x: X) => P[x.type] => Σɢᴀᴅᴛ[Index, Branches[Index, F, Σɢᴀᴅᴛ[X, P]]]
 //    ): (x: X) => P[x.type] => 𝕄[Index, F] =
 //      (x: X) => (p: P[x.type]) =>
-//        new 𝛎[PolynomialFunctor[Index, F]]:
+//        new 𝛎[Polynomial[Index, F]]:
 //          def out = step(x)(p) match
 //            case in @ Σɢᴀᴅᴛ.In(_, _) =>
 //              in match

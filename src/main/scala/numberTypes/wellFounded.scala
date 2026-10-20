@@ -7,17 +7,17 @@ object wellFounded:
   type Branches[Index, F[_ <: Index], +Y] = [I <: Index] =>>
     (i: I) => F[i.type] => Y
 
-  type PolynomialFunctor[Index, F[_ <: Index]] =
+  type Polynomial[Index, F[_ <: Index]] =
     [Y] =>> Σɢᴀᴅᴛ[Index, Branches[Index, F, Y]]
 
-  type 𝕎[Index, F[_ <: Index]] = μᵢ[PolynomialFunctor[Index, F]]
+  type 𝕎[Index, F[_ <: Index]] = μᵢ[Polynomial[Index, F]]
 
   object 𝕎:
 
     def sup[Index, F[_ <: Index], Y <: 𝕎[Index, F], I <: Index](
       i: I,
       branches: Branches[Index, F, Y][I]
-    ): μᵢ.In[PolynomialFunctor[Index, F], Σɢᴀᴅᴛ.In[Index, Branches[Index, F, Y], I]] =
+    ): μᵢ.In[Polynomial[Index, F], Σɢᴀᴅᴛ.In[Index, Branches[Index, F, Y], I]] =
       μᵢ.In(Σɢᴀᴅᴛ.In[Index, Branches[Index, F, Y], I](i, branches))
 
     def ind[Index, F[_ <: Index], P[_ <: 𝕎[Index, F]]](

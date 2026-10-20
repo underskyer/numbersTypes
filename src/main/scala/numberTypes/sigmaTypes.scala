@@ -29,6 +29,14 @@ object sigmaTypes:
   inline def inΣ[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): Σɢᴀᴅᴛ[I, F] =
     Σɢᴀᴅᴛ.In[I, F, i](summon[ValueOf[i]].value, fi)
 
+  trait ⅀[Index, F[_ <: Index]]:
+    type I <: Index
+    val index: I
+    val value: F[index.type]
+
+  final case class InΣ[Index, F[_ <: Index], J <: Index](index: J, value: F[index.type]) extends ⅀[Index, F]:
+    type I = J
+
   //⅀
   type ∑ = Σɢᴀᴅᴛ
 
@@ -38,16 +46,16 @@ object sigmaTypes:
     println()
     println("sigma pi:")
 
-    type Sum[A, B] = ∑[𝔹, Pair[A, B]]
+    type Sum[A, B] = ⅀[𝔹, Pair[A, B]]
 
     def sumIso[A, B]: (A + B) ~ Sum[A, B] = (
       forward = _.fold[Sum[A, B]](
-        inΣ[𝔹, Pair[A, B], false],
-        inΣ[𝔹, Pair[A, B], true]
+        InΣ[𝔹, Pair[A, B], false](false, _),
+        InΣ[𝔹, Pair[A, B], true](true, _)
       ),
       backward =
-        case Σɢᴀᴅᴛ.In(false, a: A) => Left(a)
-        case Σɢᴀᴅᴛ.In(true,  b: B) => Right(b)
+        case InΣ(false, a: A) => Left(a)
+        case InΣ(true,  b: B) => Right(b)
     )
 
     val iso = sumIso[Int, String]
