@@ -8,6 +8,8 @@ infix type +[A, B] = A Either B
 infix type ~>[F[_], G[_]] = [A] => F[A] => G[A]
 type Algebra[F[_]] = [A] =>> F[A] => A
 type Coalgebra[F[_]] = [A] =>> A => F[A]
+type Functor[F[+_]] = [A, B] => (A => B) => (F[A] => F[B])
+
 type Id[A] = A
 type Const[A] = [X] =>> A
 
@@ -25,13 +27,12 @@ enum μᵢ[+F[+_]]:
   case In[+G[+_], +V <: G[μᵢ[G]]](unfix: V) extends μᵢ[G]
 
 object μᵢ:
-  def cata[F[+_], A](step: F[μᵢ[F]] => (μᵢ[F] => A) => A): (w: μᵢ[F]) => A =
-    def go: μᵢ[F] => A = { case In(v) => step(v)(go) }
-    go
+  def openCata[F[+_], A](step: F[μᵢ[F]] => (μᵢ[F] => A) => A): μᵢ[F] => A =
+    case In(v) => step(v)(openCata(step))
   
   extension [F[+_]] (fix: μᵢ[F])
-    inline def fold[A](step: F[μᵢ[F]] => (μᵢ[F] => A) => A): A =
-      cata[F, A](step)(fix)
+    inline def openFold[A](step: F[μᵢ[F]] => (μᵢ[F] => A) => A): A =
+      openCata[F, A](step)(fix)
 
 
 // \mathbf{\nu}

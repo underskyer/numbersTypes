@@ -29,13 +29,14 @@ object sigmaTypes:
   inline def inΣ[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): Σɢᴀᴅᴛ[I, F] =
     Σɢᴀᴅᴛ.In[I, F, i](summon[ValueOf[i]].value, fi)
 
-  trait ⅀[Index, F[_ <: Index]]:
-    type I <: Index
-    val index: I
+  trait ⅀[Index, +F[_ <: Index]]:
+    val index: Index
     val value: F[index.type]
 
-  final case class InΣ[Index, F[_ <: Index], J <: Index](index: J, value: F[index.type]) extends ⅀[Index, F]:
-    type I = J
+  final case class InΣ[Index, F[_ <: Index], J <: Index](
+    index: J,
+    value: F[index.type]
+  ) extends ⅀[Index, F]
 
   //⅀
   type ∑ = Σɢᴀᴅᴛ

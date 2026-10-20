@@ -23,8 +23,6 @@ object mTrees:
             (k: i.type) => (b: F[k.type]) => f(br(k)(b))
           )
 
-  type Functor[F[+_]] = [A, B] => (A => B) => (F[A] => F[B])
-
   trait 𝛎[+F[+_]]:
     def out: F[𝛎[F]]
 

@@ -1,7 +1,7 @@
 package numberTypes.inductor
 
 import numberTypes.*
-import numberTypes.sigmaTypes.Σɢᴀᴅᴛ
+import numberTypes.sigmaTypes.{⅀, InΣ}
 import numberTypes.wellFounded.*
 
 object natWellFounded:
@@ -11,13 +11,13 @@ object natWellFounded:
     case true  => Unit
   type ℕ = 𝕎[𝔹, NatArity]
 
-  type NatZero         = μᵢ.In[Polynomial[𝔹, NatArity], Σɢᴀᴅᴛ.In[𝔹, Branches[𝔹, NatArity, Nothing], false]]
-  type NatSucc[N <: ℕ] = μᵢ.In[Polynomial[𝔹, NatArity], Σɢᴀᴅᴛ.In[𝔹, Branches[𝔹, NatArity, N      ], true ]]
+  type NatZero         = μᵢ.In[Polynomial[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, Nothing], false]]
+  type NatSucc[N <: ℕ] = μᵢ.In[Polynomial[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, N      ], true ]]
 
   // todo не работает!!
   type NatPrev[N <: ℕ] <: ℕ = N match
     case NatZero => Nothing
-    case μᵢ.In[Polynomial[𝔹, NatArity], Σɢᴀᴅᴛ.In[𝔹, Branches[𝔹, NatArity, p], true]] => p & ℕ
+    case μᵢ.In[Polynomial[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, p], true]] => p & ℕ
 
   object ℕ:
     val zero: NatZero = 𝕎.sup[𝔹, NatArity, Nothing, false](false, _ => identity[Nothing])
