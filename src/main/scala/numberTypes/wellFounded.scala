@@ -45,7 +45,7 @@ object wellFounded:
         (branches: Branches[Index, F, 𝕎[Index, F]][i.type]) =>
         (ih: (x: 𝕎[Index, F]) => P[x.type]) => P[𝕎[Index, F]] // Induction Hypothesis - гипотеза индукции
     )(w: 𝕎[Index, F]): P[w.type] =
-      w.fold(v => ih => v match
+      w.openFold(v => ih => v match
         case InΣ(index, branches) =>
           step(
             index)(
