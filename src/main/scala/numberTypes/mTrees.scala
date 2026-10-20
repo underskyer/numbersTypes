@@ -1,27 +1,9 @@
 package numberTypes
 
-import numberTypes.sigmaTypes.Σɢᴀᴅᴛ
-import numberTypes.wellFounded.{Branches, Polynomial}
+import numberTypes.mTrees.𝕄.DepCoalgebra
+import numberTypes.sigmaTypes.{InΣ, ⅀}
 
 object mTrees:
-
-  enum Σɢᴀᴅᴛ[IndexType, +G[_ <: IndexType]]: //
-    case In[I, +F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
-
-  type Branches[Index, F[_ <: Index], +Y] = [I <: Index] =>>
-    (i: I) => F[i.type] => Y
-
-  type Polynomial[Index, F[_ <: Index]] =
-    [Y] =>> Σɢᴀᴅᴛ[Index, Branches[Index, F, Y]]
-
-  given [Index, F[_ <: Index]]: Functor[Polynomial[Index, F]] =
-    [A, B] => (f: A => B) => (p: Polynomial[Index, F][A]) =>
-      p match
-        case Σɢᴀᴅᴛ.In(i, br) =>
-          Σɢᴀᴅᴛ.In[Index, Branches[Index, F, B], i.type](
-            i,
-            (k: i.type) => (b: F[k.type]) => f(br(k)(b))
-          )
 
   trait 𝛎[+F[+_]]:
     def out: F[𝛎[F]]
@@ -33,72 +15,129 @@ object mTrees:
 
   type 𝕄[Index, F[_ <: Index]] = 𝛎[Polynomial[Index, F]]
 
-
-
   object 𝕄:
 
-    // Конструктор (ко-интродукция): из «шапки» (index, branches) строим элемент ν
     def sup[Index, F[_ <: Index], I <: Index](
       i: I,
       br: Branches[Index, F, 𝕄[Index, F]][I]
     ): 𝕄[Index, F] =
       new 𝛎[Polynomial[Index, F]]:
-        val out = Σɢᴀᴅᴛ.In[Index, Branches[Index, F, 𝕄[Index, F]], I](i, br)
-
-    def unfold[Index, F[_ <: Index], X](
-      step: Coalgebra[Polynomial[Index, F]][X]
-    ): X => 𝕄[Index, F] =
-      lazy val go: X => 𝕄[Index, F] = step(_) match
-        case Σɢᴀᴅᴛ.In(i, br) => sup[Index, F, i.type](i, (k: i.type) => (b: F[k.type]) => go(br(k)(b)))
-      go
+        val out = InΣ[Index, Branches[Index, F, 𝕄[Index, F]], I](i, br)
 
     type DepCoalgebra[Index, F[_ <: Index], X[_ <: Index]] =
       [I <: Index] => (i: I) => X[i.type] =>
-        ((k: i.type) => F[k.type] => X[k.type])
+        ((k: i.type) => F[i.type] => X[i.type])
 
-    trait DepPair[Index, X[_ <: Index]]:
-      type I <: Index
-      val i: I
-      val x: X[i.type]
 
-    // Мотив для независимого корекурсора
-    type ΣState[Index, X] = [I <: Index] =>> I × X
-
-    def dunfold[Index, F[_ <: Index], X[_ <: Index]](
+    def coind[Index, F[_ <: Index], X[_ <: Index]](
       step: DepCoalgebra[Index, F, X]
     ): [I <: Index] => (i: I) => X[i.type] => 𝕄[Index, F] =
-      val coalg: Coalgebra[Polynomial[Index, F]][DepPair[Index, X]] =
-        (s: DepPair[Index, X]) =>
-          Σɢᴀᴅᴛ.In[Index, Branches[Index, F, DepPair[Index, X]], s.i.type](
-            s.i,
-            (k: s.i.type) => (b: F[k.type]) =>
-              val x2 = step[s.I](s.i)(s.x)(k)(b)
-              new DepPair[Index, X]:
-                type I = k.type
-                val i = k
-                val x = x2
-          )
-      val go = 𝛎.unfold[Polynomial[Index, F], DepPair[Index, X]](coalg)
-      [J <: Index] => j => x => go(new DepPair[Index, X]:
-        type I = j.type
-        val i = j
-        val x = x
-      )
+      val coalg: Coalgebra[Polynomial[Index, F]][⅀[Index, X]] = s =>
+        InΣ[Index, Branches[Index, F, ⅀[Index, X]], s.index.type](
+          s.index,
+          k => b => InΣ(k, step(s.index)(s.value)(k)(b))
+        )
 
-//    def coind[Index, F[_ <: Index], X, P[_ <: X]](
-//      step: (x: X) => P[x.type] => Σɢᴀᴅᴛ[Index, Branches[Index, F, Σɢᴀᴅᴛ[X, P]]]
-//    ): (x: X) => P[x.type] => 𝕄[Index, F] =
-//      (x: X) => (p: P[x.type]) =>
-//        new 𝛎[Polynomial[Index, F]]:
-//          def out = step(x)(p) match
-//            case in @ Σɢᴀᴅᴛ.In(_, _) =>
-//              in match
-//                case Σɢᴀᴅᴛ.In(y, q) =>
-//                  // здесь y уже имеет синглтон-тип y.typ e, и q : P[y.type]
-//                  Σɢᴀᴅᴛ.In(in.index, (j: in.index.type) => (b: F[j.type]) =>
-//                    val pair = next(j)(b)          // : ΣɢᴀᴅT[X, P]
-//                    pair match
-//                      case Σɢᴀᴅᴛ.In(y2, q2) =>      // y2 : X, q2 : P[y2.type]  ← уже согласовано
-//                        coind(step)(y2)(q2)
-//                  )
-//asInstanceOf
+      [J <: Index] => j => x => 𝛎.unfold(coalg)(InΣ(j, x))
+
+    type ΣState[Index, X] = [I <: Index] =>> I × X
+
+  object test:
+    // ── 1. Индекс: два канала ──
+    enum Ch:
+      case Num   // поток чисел
+      case Flag  // поток флагов
+    export Ch.*
+
+    // ── 2. Форма ЗАВИСИТ от индекса ──
+    //    Num:  1 ребёнок (метка не нужна)
+    //    Flag: 2 ребёнка (метка = выбор ветки)
+    type Form = [T <: Ch] =>> T match
+      case Num.type  => Unit
+      case Flag.type => Boolean
+
+    // ── 3. Мотива ЗАВИСИТ от индекса (неконстантная!) ──
+    type Motive = [T <: Ch] =>> T match
+      case Num.type  => LazyList[BigInt]
+      case Flag.type => LazyList[Boolean]
+
+    // ── 4. Один шаг — общий для обоих каналов ──
+    val step: DepCoalgebra[Ch, Form, Motive] =
+      [I <: Ch] => (i: I) => (seed: Motive[i.type]) =>
+        (_: i.type) => (_: Form[i.type]) =>
+          i match
+            case Ch.Num  => seed.asInstanceOf[LazyList[BigInt  ]].tail.asInstanceOf[Motive[i.type]]
+            case Ch.Flag => seed.asInstanceOf[LazyList[Boolean ]].tail.asInstanceOf[Motive[i.type]]
+
+    // ══════════════════════════════════════════════════════════════
+    //  Новый тип — поверх 𝕄
+    // ══════════════════════════════════════════════════════════════
+    type HeteroStream = 𝕄[Ch, Form]
+
+    object HeteroStream:
+      // строитель через 𝕄.coind
+      def numsFrom(n: BigInt): HeteroStream =
+        𝕄.coind(step)(Ch.Num)(LazyList.iterate(n)(_ + 1))
+
+      def flags: HeteroStream =
+        𝕄.coind(step)(Ch.Flag)(LazyList.continually(true))
+
+      // комбинатор через 𝕄.sup
+      def fork(n: BigInt): HeteroStream =
+        𝕄.sup[Ch, Form, Ch.Flag.type](
+          Ch.Flag,
+          (_: Ch.Flag.type) => (b: Boolean) =>
+            if b then flags else numsFrom(n)
+        )
+
+    // наблюдатели — через 𝕄.out
+    extension (h: HeteroStream)
+      def index: Ch = h.out match { case InΣ(i, _) => i }
+
+      def children: List[(String, HeteroStream)] = h.out match
+        case InΣ(i: Ch.Num.type, br: Branches[Ch, Form, HeteroStream][Ch.Num.type]) =>
+          List("()" -> br(i)(()))
+        case InΣ(i: Ch.Flag.type, br: Branches[Ch, Form, HeteroStream][Ch.Flag.type]) =>
+          List("false" -> br(i)(false),
+            "true"  -> br(i)(true))
+
+//      def render(depth: Int, indent: String = ""): Unit =
+//        println(s"$indent${h.index}")
+//        if depth > 0 then
+//          h.children.foreach { (lbl, c) =>
+//            c.render(depth - 1, indent + s"[$lbl]→")
+//          }
+    extension (h: HeteroStream)
+      def render(maxDepth: Int): Unit =
+        def loop(h: HeteroStream, depth: Int, prefix: String, conn: String, isLast: Boolean): Unit =
+          println(s"$prefix$conn${h.index}")
+          if depth < maxDepth then
+            val cs = h.children
+            cs.zipWithIndex.foreach { case ((lbl, c), i) =>
+              val cIsLast = i == cs.size - 1
+              val cConn = if cIsLast then "└─" else "├─"
+              val nextP =
+                if depth == 0 then prefix
+                else prefix + (if isLast then "  " else "│ ")
+              loop(c, depth + 1, nextP, s"$cConn[$lbl] ", cIsLast)
+            }
+
+        loop(h, 0, "", "", true)
+
+    println ("── numsFrom(0)  (coind Ch.Num) ──")
+    HeteroStream.numsFrom (0).render (2)
+
+    println ()
+    println ("── flags         (coind Ch.Flag) ──")
+    HeteroStream.flags.render (1)
+
+    println ()
+    println ("── fork(10)      (sup Ch.Flag) ──")
+    HeteroStream.fork (10).render (2)
+
+    println ()
+    println ("── Статическая защита: строки ниже не компилируются ──")
+    println ("  coind(step)(Ch.Num )(LazyList(true))    ✗ LazyList[Boolean] ≠ X[Num]  = LazyList[BigInt]")
+    println ("  coind(step)(Ch.Flag)(LazyList(0, 1))    ✗ LazyList[BigInt]   ≠ X[Flag] = LazyList[Boolean]")
+
+

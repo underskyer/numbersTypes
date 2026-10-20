@@ -4,29 +4,6 @@ import numberTypes.sigmaTypes.{⅀, InΣ}
 
 object wellFounded:
 
-  type Branches[Index, F[_ <: Index], +Y] = [I <: Index] =>>
-    (i: I) => F[i.type] => Y
-
-  type Polynomial[Index, F[_ <: Index]] =
-    [Y] =>> ⅀[Index, Branches[Index, F, Y]]
-
-  given polynomialFunctor: [Index, F[_ <: Index]] => Functor[Polynomial[Index, F]] =
-    [A, B] => (f: A => B) => (pa: Polynomial[Index, F][A]) => pa match
-      case InΣ(i, branches) =>
-        val bs = branches.asInstanceOf[Branches[Index, F, A][i.type]]
-        InΣ(i, (j: i.type) => (x: F[j.type]) => f(bs(j)(x)))
-
-//  enum μᵢ[+F[+_]]:
-//    case In[+G[+_], +V <: G[μᵢ[G]]](unfix: V) extends μᵢ[G]
-//
-//  object μᵢ:
-//    def cata[F[+_], A](step: F[μᵢ[F]] => (μᵢ[F] => A) => A): (w: μᵢ[F]) => A =
-//      def go: μᵢ[F] => A = { case In(v) => step(v)(go) }
-//      go
-//
-//    extension [F[+_]] (fix: μᵢ[F])
-//      inline def fold[A](step: F[μᵢ[F]] => (μᵢ[F] => A) => A): A =
-//        cata[F, A](step)(fix)
 
   type 𝕎[Index, F[_ <: Index]] = μᵢ[Polynomial[Index, F]]
 

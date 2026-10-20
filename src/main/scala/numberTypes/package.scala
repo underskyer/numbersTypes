@@ -79,3 +79,4 @@ trait LowPriority:
   given convFromIso2: [A, B] =>(iso: A ~ B) => Conversion[B, A] = new:
     def apply(b: B) = iso.backward(b)
 
+
