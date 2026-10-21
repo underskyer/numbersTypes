@@ -17,30 +17,31 @@ object mTrees:
 
   object 𝕄:
 
-    def sup[Index, F[_ <: Index], I <: Index](
+    def in[Index, F[_ <: Index], I <: Index](
       i: I,
       br: Branches[Index, F, 𝕄[Index, F]][I]
     ): 𝕄[Index, F] =
-      new 𝛎[Polynomial[Index, F]]:
-        val out = InΣ[Index, Branches[Index, F, 𝕄[Index, F]], I](i, br)
+      new 𝛎[Polynomial[Index, F]] { val out = InΣ(i, br) }
 
     type DepCoalgebra[Index, F[_ <: Index], X[_ <: Index]] =
       [I <: Index] => (i: I) => X[i.type] =>
         ((k: i.type) => F[i.type] => X[i.type])
 
-
     def coind[Index, F[_ <: Index], X[_ <: Index]](
       step: DepCoalgebra[Index, F, X]
     ): [I <: Index] => (i: I) => X[i.type] => 𝕄[Index, F] =
-      val coalg: Coalgebra[Polynomial[Index, F]][⅀[Index, X]] = s =>
+      val coalgebra: Coalgebra[Polynomial[Index, F]][⅀[Index, X]] = s =>
         InΣ[Index, Branches[Index, F, ⅀[Index, X]], s.index.type](
           s.index,
           k => b => InΣ(k, step(s.index)(s.value)(k)(b))
         )
 
-      [J <: Index] => j => x => 𝛎.unfold(coalg)(InΣ(j, x))
+      [J <: Index] => j => x => 𝛎.unfold(coalgebra)(InΣ(j, x))
+    end coind
 
-    type ΣState[Index, X] = [I <: Index] =>> I × X
+    def corec[Index, F[_ <: Index], C] =
+      coind[Index, F, [I <: Index] =>> I × C]
+  end 𝕄
 
   object test:
     // ── 1. Индекс: два канала ──
@@ -84,7 +85,7 @@ object mTrees:
 
       // комбинатор через 𝕄.sup
       def fork(n: BigInt): HeteroStream =
-        𝕄.sup[Ch, Form, Ch.Flag.type](
+        𝕄.in[Ch, Form, Ch.Flag.type](
           Ch.Flag,
           (_: Ch.Flag.type) => (b: Boolean) =>
             if b then flags else numsFrom(n)
