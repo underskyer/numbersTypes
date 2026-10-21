@@ -3,7 +3,7 @@ package numberTypes
 object piTypes:
 
   // ℿ
-  type ∏[Index, F[_ <: Index]] = (i: Index) => F[i.type]
+  type ℿ[Index, F[_ <: Index]] = (i: Index) => F[i.type]
   type Π[Index, F[_ <: Index]] = [I <: Index] => () => F[I]
 
   extension [Index, F[_ <: Index]](f: Π[Index, F])
@@ -25,7 +25,7 @@ object piTypes:
       case Square => Float
 
     // 3. Реализация Пи-функции
-    val calculateArea: ∏[Shape, AreaResult] = (s: Shape) => s match
+    val calculateArea: ℿ[Shape, AreaResult] = (s: Shape) => s match
       case c: Circle => c.radius * c.radius * Math.PI
       case s: Square => (s.side * s.side).toFloat
 
@@ -39,7 +39,7 @@ object piTypes:
   object testPiIso:
 
 
-    type ProdΠ[A, B] = ∏[𝔹, Pair[A, B]]
+    type ProdΠ[A, B] = ℿ[𝔹, Pair[A, B]]
     def prodΠIso[A, B]: (A × B) ~ ProdΠ[A, B] = (
       forward = ab =>
         case _: false => ab._1
@@ -47,7 +47,7 @@ object piTypes:
       backward = p => p(false) -> p(true)
     )
 
-    type Exp[A, B] = ∏[A, Const[B]]
+    type Exp[A, B] = ℿ[A, Const[B]]
     def expIso[A, B]: (A => B) ~ Exp[A, B] = (
       forward = identity,
       backward = f => f(_)

@@ -30,11 +30,13 @@ object mTrees:
     def coind[Index, F[_ <: Index], X[_ <: Index]](
       step: DepCoalgebra[Index, F, X]
     ): [I <: Index] => (i: I) => X[i.type] => 𝕄[Index, F] =
-      val coalgebra: Coalgebra[Polynomial[Index, F]][⅀[Index, X]] = s =>
-        InΣ[Index, Branches[Index, F, ⅀[Index, X]], s.index.type](
-          s.index,
-          k => b => InΣ(k, step(s.index)(s.value)(k)(b))
-        )
+      val coalgebra: Coalgebra[Polynomial[Index, F]][⅀[Index, X]] =
+        case InΣ(index, v) =>
+          val value = v.asInstanceOf[X[index.type]]
+          InΣ[Index, Branches[Index, F, ⅀[Index, X]], index.type](
+            index,
+            k => b => InΣ(k, step(index)(value)(k)(b))
+          )
 
       [J <: Index] => j => x => 𝛎.unfold(coalgebra)(InΣ(j, x))
     end coind

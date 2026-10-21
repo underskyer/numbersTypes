@@ -18,19 +18,19 @@ object natSigmaGADT:
     case SuccIdx[prev] => prev
 
   type NatFunctor[NextLayer[_ <: NatIdx], I <: NatIdx] =
-    ∑[𝔹, NatFamily[NextLayer, PredIdx[I]]]
+    ⅀[𝔹, NatFamily[NextLayer, PredIdx[I]]]
 
   type Nat = μμ[NatIdx][NatFunctor]
 
   object Nat:
     def zero: Nat[ZeroIdx] =
       Mu[NatIdx, NatFunctor, ZeroIdx](
-        inΣ[𝔹, NatFamily[Nat, ZeroIdx], true](())
+        InΣ[𝔹, NatFamily[Nat, ZeroIdx], true](true, ())
       )
 
     def succ[I <: NatIdx](n: Nat[I]): Nat[SuccIdx[I]] =
       Mu[NatIdx, NatFunctor, SuccIdx[I]](
-        inΣ[𝔹, NatFamily[Nat, I], false](n)
+        InΣ[𝔹, NatFamily[Nat, I], false](false, n)
       )
 
   // ============================================================================
@@ -46,8 +46,8 @@ object natSigmaGADT:
   val ind: NatInductor =
     [P[_ <: NatIdx]] => (default: P[ZeroIdx], next: IndexedNatNext[P]) => [I <: NatIdx] => (n: Nat[I]) =>
       def loop[K <: NatIdx]: Nat[K] => P[K] =
-        case Mu(Σɢᴀᴅᴛ.In(true , _ )) => default.asInstanceOf[P[K]]
-        case Mu(Σɢᴀᴅᴛ.In(false, fi)) =>
+        case Mu(InΣ(true , _ )) => default.asInstanceOf[P[K]]
+        case Mu(InΣ(false, fi)) =>
           val prevTerm = fi.asInstanceOf[Nat[NatIdx]]
           next(prevTerm, loop(prevTerm)).asInstanceOf[P[K]]
 

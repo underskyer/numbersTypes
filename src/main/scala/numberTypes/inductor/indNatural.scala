@@ -1,7 +1,8 @@
 package numberTypes.inductor
 
 import numberTypes.*
-import numberTypes.sigmaTypes.Σɢᴀᴅᴛ
+import numberTypes.sigmaTypes.⅀
+import numberTypes.sigmaTypes.⅀.InΣ
 
 
 object indNatural:
@@ -12,20 +13,20 @@ object indNatural:
     case false => Zero.type
     case true  => Succ[Prev]
 
-  type NatFunctor[+Prev] = Σɢᴀᴅᴛ[𝔹, NatFamily[Prev]]
-  type ZeroΣ = Σɢᴀᴅᴛ.In[𝔹, NatFamily[Nat], false]
-  type SuccΣ = Σɢᴀᴅᴛ.In[𝔹, NatFamily[Nat], true]
+  type NatFunctor[+Prev] = ⅀[𝔹, NatFamily[Prev]]
+  type ZeroΣ = InΣ[𝔹, NatFamily[Nat], false]
+  type SuccΣ = InΣ[𝔹, NatFamily[Nat], true]
 
 
   type Nat = μᵢ[NatFunctor]
   type NatZero =           μᵢ.In[NatFunctor, ZeroΣ]
   type NatSucc[P <: Nat] = μᵢ.In[NatFunctor, SuccΣ]
 
-  val zero: NatZero = μᵢ.In(Σɢᴀᴅᴛ.In[𝔹, NatFamily[Nat], false](false, Zero))
+  val zero: NatZero = μᵢ.In(InΣ[𝔹, NatFamily[Nat], false](false, Zero))
 
   def succ[N <: Nat](n: N): Nat =
     μᵢ.In[NatFunctor, SuccΣ](
-      Σɢᴀᴅᴛ.In[𝔹, NatFamily[Nat], true](true, Succ(n))
+      InΣ[𝔹, NatFamily[Nat], true](true, Succ(n))
     )
 
   //type IndexedNatNext[P[_ <: NatIdx]] = [I <: NatIdx] => (prev: Nat[I], prevP: P[I]) => P[SuccIdx[I]]
@@ -35,8 +36,8 @@ object indNatural:
 
   val ind: NatInductor =
     [R[_ <: Nat]] => default => next => n => n match
-      case μᵢ.In(Σɢᴀᴅᴛ.In(false, _   )) => default.asInstanceOf[R[n.type]]
-      case μᵢ.In(Σɢᴀᴅᴛ.In(true, value)) =>
+      case μᵢ.In(InΣ(false, _   )) => default.asInstanceOf[R[n.type]]
+      case μᵢ.In(InΣ(true, value)) =>
         val p = value.asInstanceOf[Succ[Nat]].prev
         next(p)(ind[R](default)(next)(p)).asInstanceOf[R[n.type]]
 

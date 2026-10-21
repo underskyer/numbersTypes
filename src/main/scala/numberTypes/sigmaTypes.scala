@@ -23,23 +23,27 @@ object sigmaTypes:
     ](v: TypeFamily[In]): Σᴏᴏᴘ[IndexType, TypeFamily] =
       OOP[IndexType, TypeFamily, In](v)
 
-  enum Σɢᴀᴅᴛ[IndexType, +G[_ <: IndexType]]: //
-    case In[I, +F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
+//  enum Σɢᴀᴅᴛ[IndexType, +G[_ <: IndexType]]: //
+//    case In[I, +F[_ <: I], i <: I](index: i, fi: F[i]) extends Σɢᴀᴅᴛ[I, F]
+//
+//  inline def inΣ[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): Σɢᴀᴅᴛ[I, F] =
+//    Σɢᴀᴅᴛ.In[I, F, i](summon[ValueOf[i]].value, fi)
 
-  inline def inΣ[I, F[_ <: I], i <: I: ValueOf](fi: F[i]): Σɢᴀᴅᴛ[I, F] =
-    Σɢᴀᴅᴛ.In[I, F, i](summon[ValueOf[i]].value, fi)
+//  trait ⅀[Index, +F[_ <: Index]]:
+//    val index: Index
+//    val value: F[index.type]
+//
+//  final case class InΣ[Index, F[_ <: Index], J <: Index](
+//    index: J,
+//    value: F[index.type]
+//  ) extends ⅀[Index, F]
 
-  trait ⅀[Index, +F[_ <: Index]]:
-    val index: Index
-    val value: F[index.type]
+  enum ⅀[Index, +F[_ <: Index]]:
+    case InΣ[Ind, G[_ <: Ind], J <: Ind](index: J, value: G[index.type]) extends ⅀[Ind, G]
 
-  final case class InΣ[Index, F[_ <: Index], J <: Index](
-    index: J,
-    value: F[index.type]
-  ) extends ⅀[Index, F]
-
+  export ⅀.*
   //⅀
-  type ∑ = Σɢᴀᴅᴛ
+//  type ∑ = Σɢᴀᴅᴛ
 
 
   object test:
@@ -63,11 +67,11 @@ object sigmaTypes:
     println("sum iso left : " + iso.backward(iso.forward(Left[Int, String](42))))
     println("sum iso right: " + iso.backward(iso.forward(Right[Int, String]("str: 42"))))
 
-    type ProdΣ[A, B] = ∑[A, Const[B]]
-    def prodΣIso[A, B]: (A × B) ~ ProdΣ[A, B] = (
-      forward = Σɢᴀᴅᴛ.In[A, Const[B], A].tupled,
-      backward = { case Σɢᴀᴅᴛ.In(a: A, b: B) => a -> b }
-    )
+//    type ProdΣ[A, B] = ⅀[A, Const[B]]
+//    def prodΣIso[A, B]: (A × B) ~ ProdΣ[A, B] = (
+//      forward = InΣ[A, Const[B], A].tupled,
+//      backward = { case InΣ(a: A, b: B) => a -> b }
+//    )
 
 
     val optUsage: [X] => Option[X] => String =
