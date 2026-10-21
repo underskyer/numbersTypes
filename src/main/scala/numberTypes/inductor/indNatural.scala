@@ -30,18 +30,15 @@ object indNatural:
 
   //type IndexedNatNext[P[_ <: NatIdx]] = [I <: NatIdx] => (prev: Nat[I], prevP: P[I]) => P[SuccIdx[I]]
   type NatInductor = [C[_ <: Nat]]
-    => C[NatZero] => ((p: Nat) => C[p.type ] => C[Nat])
-    => (n: Nat) => C[n.type]
+    => C[NatZero] => ((p: Nat) => C[p.type] => C[Nat]) // зависимая алгебра
+    => (n: Nat) => C[n.type] //                ↑↑↑↑↑↑ C[Succ[p.type]]
 
-
-  def ind[C[_ <: Nat]](
-    default: C[zero.type],
-    next: (p: Nat) => C[p.type] => C[Nat]
-  )(n: Nat): C[n.type] = n match
-      case μᵢ.In(Σɢᴀᴅᴛ.In(false, _   )) => default.asInstanceOf[C[n.type]]
+  val ind: NatInductor =
+    [R[_ <: Nat]] => default => next => n => n match
+      case μᵢ.In(Σɢᴀᴅᴛ.In(false, _   )) => default.asInstanceOf[R[n.type]]
       case μᵢ.In(Σɢᴀᴅᴛ.In(true, value)) =>
         val p = value.asInstanceOf[Succ[Nat]].prev
-        next(p)(ind[C](default, next)(p)).asInstanceOf[C[n.type]]
+        next(p)(ind[R](default)(next)(p)).asInstanceOf[R[n.type]]
 
   def rec[C] = ind[Const[C]]
 
@@ -51,11 +48,10 @@ object indNatural:
     println("                НАТУРАЛЬНАЯ ИНДУКЦИЯ              ")
     println("==================================================")
 
-    private type FactState = (Long, Long)
+    type FactState = (Long, Long)
 
-    private val factStateRec: Nat => FactState = rec[FactState](
-      (0L, 1L),
-      _ => (pair: FactState) =>
+    val factStateRec = rec[FactState]((0L, 1L))(
+      n => (pair: FactState) =>
           val (currentLong, currentFact) = pair
           val nextLong = currentLong + 1L
           (nextLong, currentFact * nextLong)
@@ -72,20 +68,21 @@ object indNatural:
       case NatZero    => EmptyTuple
       case NatSucc[p] => Int *: TupleFamily[p]
 
-    val myInductor = ind[TupleFamily](
-      default = EmptyTuple,
-      next = prev => prevP => (42 *: prevP).asInstanceOf[TupleFamily[Nat]]
+    val cloneTheAnswer = ind[TupleFamily](EmptyTuple)(
+      prev => prevP => (42 *: prevP).asInstanceOf[TupleFamily[Nat]]
     )
 
     val n0 = zero
     val n1 = succ(n0)
     val n2 = succ(n1)
+    val n3 = succ(succ(succ(zero)))
 
-    val r0 = myInductor(n0)
-    val r1 = myInductor(n1)
-    val r2 = myInductor(n2)
+    val r0 = cloneTheAnswer(n0)
+    val r1 = cloneTheAnswer(n1)
+    val r2 = cloneTheAnswer(n2)
 
     println(s"r0 = $r0") // EmptyTuple
     println(s"r1 = $r1") // (42)
     println(s"r2 = $r2") // (42, 42)
+    println(s"r3 = ${cloneTheAnswer(n3)}") // (42, 42, 42)
     println("==================================================")

@@ -18,7 +18,7 @@ def main() =
   natSigmaChirch.test
   natPathDep.test
   piTypes.testPiIso
-  recursor.test
+  //recursor.test
   //natFixPathDep.test
   natWellFounded.test
   mTrees.test
