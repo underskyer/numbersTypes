@@ -4,10 +4,8 @@ object piTypes:
 
   // ℿ
   type ℿ[Index, F[_ <: Index]] = (i: Index) => F[i.type]
-  type Π[Index, F[_ <: Index]] = [I <: Index] => () => F[I]
 
-  extension [Index, F[_ <: Index]](f: Π[Index, F])
-    def apply[I <: Index] = f[I]()
+  type Π[B[_]] = [A] => () => B[A]
 
 
   object testPi:

@@ -7,16 +7,13 @@ import numberTypes.sigmaTypes.⅀.InΣ
 
 object indNatural:
 
-
-
-  type NatFamily[+Prev] = [B] =>> B match
+  type NatFamily[+Prev] = [B <: 𝔹] =>> B match
     case false => Zero.type
     case true  => Succ[Prev]
 
   type NatFunctor[+Prev] = ⅀[𝔹, NatFamily[Prev]]
   type ZeroΣ = InΣ[𝔹, NatFamily[Nat], false]
   type SuccΣ = InΣ[𝔹, NatFamily[Nat], true]
-
 
   type Nat = μᵢ[NatFunctor]
   type NatZero =           μᵢ.In[NatFunctor, ZeroΣ]

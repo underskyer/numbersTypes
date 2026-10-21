@@ -22,6 +22,7 @@ def main() =
   //natFixPathDep.test
   natWellFounded.test
   mTrees.test
+  natInductor.test
 
 
 
