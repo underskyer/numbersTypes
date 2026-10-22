@@ -1,16 +1,13 @@
 package numberTypes
 
-import numberTypes.piTypes.ℿ
 import numberTypes.sigmaTypes.{InΣ, ⅀}
 
-type Branches[Index, F[_ <: Index], +Y] = [I <: Index] =>>
-  (i: I) => F[i.type] => Y // ℿ[I, [i <: I] =>> F[i] => Y]
+type Brn[I, F[_ <: I], +Y] = [i <: I] =>> F[i] => Y // ℿ[F[i], Const[Y]] - компилятор умирает
 
-type ℙ[Index, F[_ <: Index]] =
-  [Y] =>> ⅀[Index, Branches[Index, F, Y]]
+type ℙ[I, F[_ <: I]] = [Y] =>> ⅀[I,  Brn[I, F, Y]]
 
-given polynomialFunctor: [Index, F[_ <: Index]] => Functor[ℙ[Index, F]] =
-  [A, B] => (f: A => B) => (pa: ℙ[Index, F][A]) => pa match
+given polynomialFunctor: [I, F[_ <: I]] => Functor[ℙ[I, F]] =
+  [A, B] => (f: A => B) => (pa: ℙ[I, F][A]) => pa match
     case InΣ(i, branches) =>
-      val bs = branches.asInstanceOf[Branches[Index, F, A][i.type]]
-      InΣ(i, (j: i.type) => (x: F[j.type]) => f(bs(j)(x)))
+      val bs = branches.asInstanceOf[Brn[I, F, A][i.type]]
+      InΣ(i, (x: F[i.type]) => f(bs(x)))

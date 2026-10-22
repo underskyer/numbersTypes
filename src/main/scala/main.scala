@@ -21,7 +21,7 @@ def main() =
   //recursor.test
   //natFixPathDep.test
   natWellFounded.test
-  mTrees.test
+//  mTrees.test
   natInductor.test
 
 

@@ -1,6 +1,5 @@
 package numberTypes
 
-import numberTypes.mTrees.𝕄.DepCoalgebra
 import numberTypes.sigmaTypes.{InΣ, ⅀}
 
 object mTrees:
@@ -19,26 +18,23 @@ object mTrees:
 
     def in[Index, F[_ <: Index], I <: Index](
       i: I,
-      br: Branches[Index, F, 𝕄[Index, F]][I]
+      br: Brn[Index, F, 𝕄[Index, F]][i.type]
     ): 𝕄[Index, F] =
       new 𝛎[ℙ[Index, F]] { val out = InΣ(i, br) }
 
-    type DepCoalgebra[Index, F[_ <: Index], X[_ <: Index]] =
-      [I <: Index] => (i: I) => X[i.type] =>
-        ((k: i.type) => F[i.type] => X[i.type])
 
     def coind[Index, F[_ <: Index], X[_ <: Index]](
-      step: DepCoalgebra[Index, F, X]
-    ): [I <: Index] => (i: I) => X[i.type] => 𝕄[Index, F] =
+      step: (i: Index) => X[i.type] => F[i.type] => X[i.type]
+    ): (i: Index) => X[i.type] => 𝕄[Index, F] =
       val coalgebra: Coalgebra[ℙ[Index, F]][⅀[Index, X]] =
         case InΣ(index, v) =>
           val value = v.asInstanceOf[X[index.type]]
-          InΣ[Index, Branches[Index, F, ⅀[Index, X]], index.type](
+          InΣ[Index, Brn[Index, F, ⅀[Index, X]], index.type](
             index,
-            k => b => InΣ(k, step(index)(value)(k)(b))
+            b => InΣ(index, step(index)(value)(b))
           )
 
-      [J <: Index] => j => x => 𝛎.unfold(coalgebra)(InΣ(j, x))
+      j => x => 𝛎.unfold(coalgebra)(InΣ(j, x))
     end coind
 
     def corec[Index, F[_ <: Index], C] =
@@ -65,9 +61,8 @@ object mTrees:
       case Flag.type => LazyList[Boolean]
 
     // ── 4. Один шаг — общий для обоих каналов ──
-    val step: DepCoalgebra[Ch, Form, Motive] =
-      [I <: Ch] => (i: I) => (seed: Motive[i.type]) =>
-        (_: i.type) => (_: Form[i.type]) =>
+    val step: (i: Ch) => Motive[i.type] => Form[i.type] => Motive[i.type] =
+      i => seed => _ =>
           i match
             case Ch.Num  => seed.asInstanceOf[LazyList[BigInt  ]].tail.asInstanceOf[Motive[i.type]]
             case Ch.Flag => seed.asInstanceOf[LazyList[Boolean ]].tail.asInstanceOf[Motive[i.type]]
@@ -89,7 +84,7 @@ object mTrees:
       def fork(n: BigInt): HeteroStream =
         𝕄.in[Ch, Form, Ch.Flag.type](
           Ch.Flag,
-          (_: Ch.Flag.type) => (b: Boolean) =>
+          (b: Boolean) =>
             if b then flags else numsFrom(n)
         )
 
@@ -98,11 +93,11 @@ object mTrees:
       def index: Ch = h.out match { case InΣ(i, _) => i }
 
       def children: List[(String, HeteroStream)] = h.out match
-        case InΣ(i: Ch.Num.type, br: Branches[Ch, Form, HeteroStream][Ch.Num.type]) =>
-          List("()" -> br(i)(()))
-        case InΣ(i: Ch.Flag.type, br: Branches[Ch, Form, HeteroStream][Ch.Flag.type]) =>
-          List("false" -> br(i)(false),
-            "true"  -> br(i)(true))
+        case InΣ(i: Ch.Num.type, br: Brn[Ch, Form, HeteroStream][Ch.Num.type]) =>
+          List("()" -> br(()))
+        case InΣ(i: Ch.Flag.type, br: Brn[Ch, Form, HeteroStream][Ch.Flag.type]) =>
+          List("false" -> br(false),
+            "true"  -> br(true))
 
 //      def render(depth: Int, indent: String = ""): Unit =
 //        println(s"$indent${h.index}")
@@ -143,4 +138,5 @@ object mTrees:
     println ("  coind(step)(Ch.Num )(LazyList(true))    ✗ LazyList[Boolean] ≠ X[Num]  = LazyList[BigInt]")
     println ("  coind(step)(Ch.Flag)(LazyList(0, 1))    ✗ LazyList[BigInt]   ≠ X[Flag] = LazyList[Boolean]")
 
+end mTrees
 

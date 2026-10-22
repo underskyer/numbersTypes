@@ -11,17 +11,17 @@ object natWellFounded:
     case true  => Unit
   type ℕ = 𝕎[𝔹, NatArity]
 
-  type NatZero         = μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, Nothing], false]]
-  type NatSucc[N <: ℕ] = μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, N      ], true ]]
+  type NatZero         = μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Brn[𝔹, NatArity, Nothing], false]]
+  type NatSucc[N <: ℕ] = μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Brn[𝔹, NatArity, N      ], true ]]
 
   // todo не работает!!
   type NatPrev[N <: ℕ] <: ℕ = N match
     case NatZero => Nothing
-    case μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, p], true]] => p & ℕ
+    case μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Brn[𝔹, NatArity, p], true]] => p & ℕ
 
   object ℕ:
-    val zero: NatZero = 𝕎.sup[𝔹, NatArity, Nothing, false](false, _ => identity[Nothing])
-    def succ[N <: ℕ](n: N): NatSucc[N] = 𝕎.sup[𝔹, NatArity, N, true ](true, _ => _ => n)
+    val zero: NatZero = 𝕎.sup[𝔹, NatArity, Nothing, false](false, identity[Nothing])
+    def succ[N <: ℕ](n: N): NatSucc[N] = 𝕎.sup[𝔹, NatArity, N, true ](true, _ => n)
 
     def ind[C[_ <: ℕ]](
       default: C[NatZero],
@@ -30,7 +30,7 @@ object natWellFounded:
       [I <: 𝔹] => i => branches => ih => i match
         case false => default.asInstanceOf[C[ℕ]]
         case true  =>
-          val pred = branches(i)(().asInstanceOf[NatArity[i.type]])
+          val pred = branches(().asInstanceOf[NatArity[i.type]])
           val predIH = ih(pred)
           next(pred)(predIH).asInstanceOf[C[ℕ]]
     )
@@ -62,7 +62,7 @@ object natWellFounded:
         //case true  => 42 *: ih(branches(b)(()))
         case false => EmptyTuple.asInstanceOf[TupleFamily[ℕ]]
         case true  =>
-          val prevNat = branches(b)(().asInstanceOf[NatArity[b.type]])
+          val prevNat = branches(().asInstanceOf[NatArity[b.type]])
           val prevP = ih(prevNat)
           (42 *: prevP).asInstanceOf[TupleFamily[ℕ]]
     ).asInstanceOf[(n: ℕ) => TupleFamily[n.type]]

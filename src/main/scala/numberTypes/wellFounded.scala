@@ -11,15 +11,15 @@ object wellFounded:
 
     def sup[Index, F[_ <: Index], Y <: 𝕎[Index, F], I <: Index](
       i: I,
-      branches: Branches[Index, F, Y][I]
-    ): μᵢ.In[ℙ[Index, F], InΣ[Index, Branches[Index, F, Y], I]] =
-      μᵢ.In[ℙ[Index, F], InΣ[Index, Branches[Index, F, Y], I]](
-        InΣ[Index, Branches[Index, F, Y], I](i, branches)
+      branches: Brn[Index, F, Y][i.type]
+    ): μᵢ.In[ℙ[Index, F], InΣ[Index, Brn[Index, F, Y], I]] =
+      μᵢ.In[ℙ[Index, F], InΣ[Index, Brn[Index, F, Y], I]](
+        InΣ[Index, Brn[Index, F, Y], I](i, branches)
       )
 
     def ind[Index, F[_ <: Index], P[_ <: 𝕎[Index, F]]](
       step: [I <: Index] => (i: I) =>
-        (branches: Branches[Index, F, 𝕎[Index, F]][i.type]) =>
+        (branches: Brn[Index, F, 𝕎[Index, F]][i.type]) =>
         (ih: (x: 𝕎[Index, F]) => P[x.type]) => // Induction Hypothesis - гипотеза индукции
         P[𝕎[Index, F]]
     )(w: 𝕎[Index, F]): P[w.type] =
@@ -27,7 +27,7 @@ object wellFounded:
         case InΣ(index, branches) =>
           step(
             index)(
-            branches.asInstanceOf[Branches[Index, F, 𝕎[Index, F]][index.type]])(
+            branches.asInstanceOf[Brn[Index, F, 𝕎[Index, F]][index.type]])(
             x => ih(x).asInstanceOf[P[x.type]]
           )
       ).asInstanceOf[P[w.type]]
