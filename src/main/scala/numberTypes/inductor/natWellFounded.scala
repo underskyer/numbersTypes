@@ -20,8 +20,8 @@ object natWellFounded:
     case μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Brn[𝔹, NatArity, p], true]] => p & ℕ
 
   object ℕ:
-    val zero: NatZero = 𝕎.sup[𝔹, NatArity, Nothing, false](false, identity[Nothing])
-    def succ[N <: ℕ](n: N): NatSucc[N] = 𝕎.sup[𝔹, NatArity, N, true ](true, _ => n)
+    val zero:               NatZero    = 𝕎.sup[𝔹, NatArity, Nothing](false, identity[Nothing])
+    def succ[N <: ℕ](n: N): NatSucc[N] = 𝕎.sup[𝔹, NatArity, N](true, _ => n)
 
     def ind[C[_ <: ℕ]](
       default: C[NatZero],
@@ -77,7 +77,6 @@ object natWellFounded:
     val n2: NatSucc[NatSucc[NatZero]] = ℕ.succ(n1)
 
     summon[NatSucc[NatZero] <:< ℕ]
-    summon[NatSucc[NatSucc[NatZero]] <:< ℕ]
     summon[NatSucc[NatSucc[NatZero]] <:< ℕ]
 
     val r0 = myInductor(n0)

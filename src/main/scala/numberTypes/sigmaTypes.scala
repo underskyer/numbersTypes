@@ -39,7 +39,7 @@ object sigmaTypes:
 //  ) extends ⅀[Index, F]
 
   enum ⅀[Index, +F[_ <: Index]]:
-    case InΣ[Ind, G[_ <: Ind], J <: Ind](index: J, value: G[index.type]) extends ⅀[Ind, G]
+    case InΣ[Ind, +G[_ <: Ind], +J <: Ind](index: J, value: G[index.type]) extends ⅀[Ind, G]
 
   export ⅀.*
   //⅀

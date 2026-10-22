@@ -9,13 +9,11 @@ object wellFounded:
 
   object 𝕎:
 
-    def sup[Index, F[_ <: Index], Y <: 𝕎[Index, F], I <: Index](
+    def sup[I, F[_ <: I], Y <: 𝕎[I, F]](
       i: I,
-      branches: Brn[Index, F, Y][i.type]
-    ): μᵢ.In[ℙ[Index, F], InΣ[Index, Brn[Index, F, Y], I]] =
-      μᵢ.In[ℙ[Index, F], InΣ[Index, Brn[Index, F, Y], I]](
-        InΣ[Index, Brn[Index, F, Y], I](i, branches)
-      )
+      branches: Brn[I, F, Y][i.type]
+    ): μᵢ.In[ℙ[I, F], InΣ[I, Brn[I, F, Y], i.type]] =
+      μᵢ.In[ℙ[I, F], InΣ[I, Brn[I, F, Y], i.type]](InΣ(i, branches))
 
     def ind[Index, F[_ <: Index], P[_ <: 𝕎[Index, F]]](
       step: [I <: Index] => (i: I) =>
