@@ -13,7 +13,7 @@ object mTrees:
       s => new:
         def out: F[𝛎[F]] = fmap(unfold(f))(f(s))
 
-  type 𝕄[Index, F[_ <: Index]] = 𝛎[Polynomial[Index, F]]
+  type 𝕄[Index, F[_ <: Index]] = 𝛎[ℙ[Index, F]]
 
   object 𝕄:
 
@@ -21,7 +21,7 @@ object mTrees:
       i: I,
       br: Branches[Index, F, 𝕄[Index, F]][I]
     ): 𝕄[Index, F] =
-      new 𝛎[Polynomial[Index, F]] { val out = InΣ(i, br) }
+      new 𝛎[ℙ[Index, F]] { val out = InΣ(i, br) }
 
     type DepCoalgebra[Index, F[_ <: Index], X[_ <: Index]] =
       [I <: Index] => (i: I) => X[i.type] =>
@@ -30,7 +30,7 @@ object mTrees:
     def coind[Index, F[_ <: Index], X[_ <: Index]](
       step: DepCoalgebra[Index, F, X]
     ): [I <: Index] => (i: I) => X[i.type] => 𝕄[Index, F] =
-      val coalgebra: Coalgebra[Polynomial[Index, F]][⅀[Index, X]] =
+      val coalgebra: Coalgebra[ℙ[Index, F]][⅀[Index, X]] =
         case InΣ(index, v) =>
           val value = v.asInstanceOf[X[index.type]]
           InΣ[Index, Branches[Index, F, ⅀[Index, X]], index.type](

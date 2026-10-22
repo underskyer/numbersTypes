@@ -11,13 +11,13 @@ object natWellFounded:
     case true  => Unit
   type ℕ = 𝕎[𝔹, NatArity]
 
-  type NatZero         = μᵢ.In[Polynomial[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, Nothing], false]]
-  type NatSucc[N <: ℕ] = μᵢ.In[Polynomial[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, N      ], true ]]
+  type NatZero         = μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, Nothing], false]]
+  type NatSucc[N <: ℕ] = μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, N      ], true ]]
 
   // todo не работает!!
   type NatPrev[N <: ℕ] <: ℕ = N match
     case NatZero => Nothing
-    case μᵢ.In[Polynomial[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, p], true]] => p & ℕ
+    case μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Branches[𝔹, NatArity, p], true]] => p & ℕ
 
   object ℕ:
     val zero: NatZero = 𝕎.sup[𝔹, NatArity, Nothing, false](false, _ => identity[Nothing])
@@ -32,7 +32,7 @@ object natWellFounded:
         case true  =>
           val pred = branches(i)(().asInstanceOf[NatArity[i.type]])
           val predIH = ih(pred)
-          next(pred)(predIH)
+          next(pred)(predIH).asInstanceOf[C[ℕ]]
     )
 
     def rec[C] = ind[Const[C]]
@@ -44,6 +44,14 @@ object natWellFounded:
     println("==================================================")
 
     type TupleFamily[I <: ℕ] <: Tuple = I match
+//      case μᵢ.In[
+//        pp, 
+//        InΣ[𝔹, [J <: 𝔹] =>> (i: J) => NatArity[i.type] => Nothing, false]
+//      ] => EmptyTuple
+//      case μᵢ.In[
+//        pp,//ℙ[𝔹, NatArity],
+//        InΣ[𝔹, [J <: 𝔹] =>> (i: J) => NatArity[i.type] => p      , true ]
+//      ] => Int *: TupleFamily[p]
       case NatZero => EmptyTuple
       case NatSucc[p] => Int *: TupleFamily[p]
 
@@ -88,12 +96,8 @@ object natWellFounded:
 
     val fibInductor = ℕ.ind[FibState](
       default = (0, 1, EmptyTuple),
-      next = prev => prevState =>
-        val a = prevState._1 // fib(k)
-        val b = prevState._2 // fib(k+1)
-        val tup = prevState._3 // кортеж длины k (в обратном порядке)
-        // следующий шаг: (fib(k+1), fib(k)+fib(k+1), fib(k+1) *: tup)
-        (b, a + b, (b *: tup).asInstanceOf[TupleFamily[ℕ]])
+      next = prev =>
+        case (a, b, tup) => (b, a + b, (b *: tup).asInstanceOf[TupleFamily[ℕ]])
     )
 
     // Печать кортежа в естественном порядке (разворачиваем накопленный)
