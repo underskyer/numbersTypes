@@ -22,16 +22,17 @@ object natWellFounded:
 
   object ℕ:
     val zero:               NatZero    = 𝕎.sup[𝔹, NatArity, Nothing](false, identity[Nothing])
-    def succ[N <: ℕ](n: N): NatSucc[N] = 𝕎.sup[𝔹, NatArity, N](true, _ => n)
+    def succ[N <: ℕ](n: N): NatSucc[N] = 𝕎.sup[𝔹, NatArity, N      ](true, _ => n)
 
     def ind[R[_ <: ℕ]](
       default: R[NatZero],
-      next: (w: ℕ) => (p: ℕ) => R[p.type] => R[w.type]
-    ): ℿ[ℕ, R] = 𝕎.ind1[𝔹, NatArity, R]: w =>
-      case InΣ(false, _) => _ => default.asInstanceOf[R[w.type]]
-      case InΣ(true, branches: Brn[𝔹, NatArity, ℕ][true])  =>
-        val pred = branches(())
-        ih => next(w)(pred)(ih(pred)).asInstanceOf[R[w.type]]
+      next: (p: ℕ) => R[p.type] => ? // R[NatSucc[p.type]] - бесполезно в Scala > 3.3
+    ): ℿ[ℕ, R] =
+      𝕎.ind[𝔹, NatArity, R]: w =>
+        case InΣ(false, _) => _ => default.asInstanceOf[R[w.type]]
+        case InΣ(true, branches: Brn[𝔹, NatArity, ℕ][true])  =>
+          val pred = branches(())
+          ih => next(pred)(ih(pred)).asInstanceOf[R[w.type]]
 
 
     def rec[C] = ind[Const[C]]
@@ -43,29 +44,13 @@ object natWellFounded:
     println("==================================================")
 
     type TupleFamily[I <: ℕ] <: Tuple = I match
-//      case μᵢ.In[
-//        _,
-//        ⅀.InΣ[𝔹, [i <: 𝔹] =>> Nothing => Nothing, false]
-//      ] => EmptyTuple
-//      case μᵢ.In[
-//        _,
-//        ⅀.InΣ[𝔹, [i <: 𝔹] =>> Unit => p, true]
-//      ] => Int *: TupleFamily[p]
-//      case μᵢ.In[
-//        pp, 
-//        InΣ[𝔹, [J <: 𝔹] =>> (i: J) => NatArity[i.type] => Nothing, false]
-//      ] => EmptyTuple
-//      case μᵢ.In[
-//        pp,//ℙ[𝔹, NatArity],
-//        InΣ[𝔹, [J <: 𝔹] =>> (i: J) => NatArity[i.type] => p      , true ]
-//      ] => Int *: TupleFamily[p]
       case NatZero => EmptyTuple
       case NatSucc[p] => Int *: TupleFamily[p]
 
 
     val myInductor = ℕ.ind[TupleFamily](
       default = EmptyTuple,
-      next = w => p => prevP => (42 *: prevP).asInstanceOf[TupleFamily[w.type]]
+      next = p => prevP => 42 *: prevP
     )
 
     val n0 = ℕ.zero
@@ -75,13 +60,13 @@ object natWellFounded:
     summon[NatSucc[NatZero] <:< ℕ]
     summon[NatSucc[NatSucc[NatZero]] <:< ℕ]
 
-//    val r0 = myInductor(n0)
-//    val r1 = myInductor(n1: ℕ)
-//    val r2 = myInductor(n2: ℕ)
-//
-//    println(s"r0 = $r0") // EmptyTuple
-//    println(s"r1 = $r1") // (42)
-//    println(s"r2 = $r2") // (42, 42)
+    val r0 = myInductor(n0)
+    val r1 = myInductor(n1: ℕ)
+    val r2 = myInductor(n2: ℕ)
+
+    println(s"r0 = $r0") // EmptyTuple
+    println(s"r1 = $r1") // (42)
+    println(s"r2 = $r2") // (42, 42)
 
     println("--------------------------------------------------")
 
@@ -91,8 +76,8 @@ object natWellFounded:
 
     val fibInductor = ℕ.ind[FibState](
       default = (0, 1, EmptyTuple),
-      next = w => prev =>
-        case (a, b, tup) => (b, a + b, (b *: tup).asInstanceOf[TupleFamily[w.type]])
+      next = prev =>
+        case (a, b, tup) => (b, a + b, b *: tup)
     )
 
     // Печать кортежа в естественном порядке (разворачиваем накопленный)

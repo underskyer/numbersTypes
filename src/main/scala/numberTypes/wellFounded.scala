@@ -16,7 +16,7 @@ object wellFounded:
     ): μᵢ.In[ℙ[I, F], InΣ[I, Brn[I, F, Y], i.type]] =
       μᵢ.In[ℙ[I, F], InΣ[I, Brn[I, F, Y], i.type]](InΣ(i, branches))
 
-    def ind[I, F[_ <: I], R[_ <: 𝕎[I, F]]](
+    def indOld[I, F[_ <: I], R[_ <: 𝕎[I, F]]](
       step:
         (i: I) => Brn[I, F, 𝕎[I, F]][i.type] => // payload
         ℿ[𝕎[I, F], R] =>
@@ -31,17 +31,18 @@ object wellFounded:
       }.asInstanceOf[ℿ[𝕎[I, F], R]]
 
 
-    def ind1[I, F[_ <: I], R[_ <: 𝕎[I, F]]](
+    def ind[I, F[_ <: I], R[_ <: 𝕎[I, F]]](
       step:
         (node: 𝕎[I, F]) =>
         (payload: ℙ[I, F][𝕎[I, F]]) =>
         (ih: ℿ[𝕎[I, F], R]) =>
         R[node.type]
-    ): (w: 𝕎[I, F]) => R[w.type] =
-      def go(w: 𝕎[I, F]): R[w.type] =
-        w match
-          case μᵢ.In(payload) =>
-            step(w)(payload)(go)
-      go
+    ): ℿ[𝕎[I, F], R] =
+      μᵢ.openCata[ℙ[I, F], R[𝕎[I, F]]] { v => v match
+        case InΣ(_, _) => ih =>
+          step(μᵢ.In(v))(v)(
+            x => ih(x).asInstanceOf[R[x.type]]
+          ).asInstanceOf[R[𝕎[I, F]]]
+      }.asInstanceOf[ℿ[𝕎[I, F], R]]
   end 𝕎
 
