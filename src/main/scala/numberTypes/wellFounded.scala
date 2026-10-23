@@ -1,6 +1,7 @@
 package numberTypes
 
-import numberTypes.sigmaTypes.{⅀, InΣ}
+import numberTypes.piTypes.ℿ
+import numberTypes.sigmaTypes.{InΣ, ⅀}
 
 object wellFounded:
 
@@ -15,20 +16,19 @@ object wellFounded:
     ): μᵢ.In[ℙ[I, F], InΣ[I, Brn[I, F, Y], i.type]] =
       μᵢ.In[ℙ[I, F], InΣ[I, Brn[I, F, Y], i.type]](InΣ(i, branches))
 
-    def ind[Index, F[_ <: Index], P[_ <: 𝕎[Index, F]]](
-      step: [I <: Index] => (i: I) =>
-        (branches: Brn[Index, F, 𝕎[Index, F]][i.type]) =>
-        (ih: (x: 𝕎[Index, F]) => P[x.type]) => // Induction Hypothesis - гипотеза индукции
-        P[𝕎[Index, F]]
-    )(w: 𝕎[Index, F]): P[w.type] =
-      w.openFold(v => ih => v match
-        case InΣ(index, branches) =>
-          step(
-            index)(
-            branches.asInstanceOf[Brn[Index, F, 𝕎[Index, F]][index.type]])(
-            x => ih(x).asInstanceOf[P[x.type]]
+    def ind[I, F[_ <: I], R[_ <: 𝕎[I, F]]](
+      step: (i: I) =>
+        Brn[I, F, 𝕎[I, F]][i.type] =>
+        ℿ[𝕎[I, F], R] =>
+        R[𝕎[I, F]]
+    ): ℿ[𝕎[I, F], R] =
+      μᵢ.openCata[ℙ[I, F], R[𝕎[I, F]]] {
+        case InΣ(index, branches) => ih =>
+          step(index)(
+            branches.asInstanceOf[Brn[I, F, 𝕎[I, F]][index.type]])(
+            w => ih(w).asInstanceOf[R[w.type]]
           )
-      ).asInstanceOf[P[w.type]]
+      }.asInstanceOf[ℿ[𝕎[I, F], R]]
 
   end 𝕎
 

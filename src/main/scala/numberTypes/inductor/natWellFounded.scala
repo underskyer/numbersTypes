@@ -27,7 +27,7 @@ object natWellFounded:
       default: C[NatZero],
       next: (p: ℕ) => C[p.type] => C[ℕ]
     ): (n: ℕ) => C[n.type] = 𝕎.ind[𝔹, NatArity, C](
-      [I <: 𝔹] => i => branches => ih => i match
+      i => branches => ih => i match
         case false => default.asInstanceOf[C[ℕ]]
         case true  =>
           val pred = branches(().asInstanceOf[NatArity[i.type]])
@@ -57,7 +57,7 @@ object natWellFounded:
 
     // рабочий индуктор!!
     def myInductor1 = 𝕎.ind[𝔹, NatArity, TupleFamily](
-      [I <: 𝔹] => b => branches => ih => b match
+      b => branches => ih => b match
         //case false => EmptyTuple
         //case true  => 42 *: ih(branches(b)(()))
         case false => EmptyTuple.asInstanceOf[TupleFamily[ℕ]]
