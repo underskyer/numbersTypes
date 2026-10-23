@@ -32,7 +32,7 @@ object natWellFounded:
         case true  =>
           val pred = branches(().asInstanceOf[NatArity[i.type]])
           val predIH = ih(pred)
-          next(pred)(predIH).asInstanceOf[C[ℕ]]
+          next(pred)(predIH)
     )
 
     def rec[C] = ind[Const[C]]
