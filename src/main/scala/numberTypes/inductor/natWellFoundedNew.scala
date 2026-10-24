@@ -25,7 +25,7 @@ object natWellFoundedNew:
 
     def ind[R[_ <: ℕ]](
       default: R[NatZero],
-      next: (p: ℕ) => R[p.type] => R[NatSucc[p.type]]
+      next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
     ): ℿ[ℕ, R] =
       𝕎.ind[𝔹, NatArity, R](
         [J <: 𝔹] => (w: ℕ) =>
@@ -36,7 +36,7 @@ object natWellFoundedNew:
             // описывают одно и то же натуральное число, но интенсионально
             // — разные типы.
             next(p)(ih(p)).asInstanceOf[R[w.type]]
-            
+
       )
 
     def indw[R[_ <: ℕ]](
@@ -49,7 +49,7 @@ object natWellFoundedNew:
           next(w)(p)(ih(p))
         else default.asInstanceOf[R[w.type]]
     )
-      
+
     def rec[C] = ind[Const[C]]
 
   object test:
@@ -74,16 +74,16 @@ object natWellFoundedNew:
     // Состояние: (fib(k), fib(k+1), накопленный кортеж длины k)
     type FibState[N <: ℕ] = (Int, Int, TupleFamily[N])
 
-//    val fibInductor = ℕ.ind[FibState](
-//      default = (0, 1, EmptyTuple),
-//      next = prev =>
-//        case (a, b, tup) => (b, a + b, (b *: tup): TupleFamily[NatSucc[prev.type]])
-//    )
-    val fibInductor = ℕ.indw[FibState](
+    val fibInductor = ℕ.ind[FibState](
       default = (0, 1, EmptyTuple),
-      next = w => prev =>
-        case (a, b, tup) => (b, a + b, (b *: tup).asInstanceOf[TupleFamily[w.type]])
+      next = [_ <: ℕ] => prev =>
+        case (a, b, tup) => (b, a + b, b *: tup)
     )
+//    val fibInductor = ℕ.indw[FibState](
+//      default = (0, 1, EmptyTuple),
+//      next = w => prev =>
+//        case (a, b, tup) => (b, a + b, (b *: tup).asInstanceOf[TupleFamily[w.type]])
+//    )
 
     // Печать кортежа в естественном порядке (разворачиваем накопленный)
     def showTupleNatural(t: Tuple): String =
