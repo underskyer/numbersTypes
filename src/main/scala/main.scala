@@ -23,6 +23,7 @@ def main() =
   natWellFounded.test
 //  mTrees.test
   natInductor.test
+  natWellFoundedNew.test
 
 
 
