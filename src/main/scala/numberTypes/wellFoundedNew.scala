@@ -21,6 +21,14 @@ object wellFoundedNew:
     ): ℿ[𝕎[I, B], R] = w => w match
       case sup(index, subtrees) => step(w)(index)(subtrees)(ind(step))
 
+//    def indT[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
+//      step: [J <: I] =>
+//        J => (B[J] => 𝕎[I, B]) =>
+//        ([BJ <: B[J]] => BJ => sup[I, B, J, 𝕎[I, B]]) =>
+//        R[sup[I, B, J, 𝕎[I, B]]]
+//    ): [W <: 𝕎[I, B]] => W => R[W] = [W <: 𝕎[I, B]] => w => w match
+//      case sup(index, subtrees) => step(index)(subtrees)(indT(step))
+
 
   end 𝕎
 
