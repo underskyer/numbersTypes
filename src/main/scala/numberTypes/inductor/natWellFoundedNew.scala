@@ -47,16 +47,11 @@ object natWellFoundedNew:
           val p = subtrees.asInstanceOf[Unit => ℕ](())
           next(w)(p)(ih(p))
 
-//    def indT[R[_ <: ℕ]](
-//      default: R[NatZero],
-//      next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
-//    ): [N <: ℕ] => N => R[N] = 𝕎.indT[𝔹, NatArity, R](
-//      [J <: 𝔹, W <: ℕ] => i => i match
-//        case false => _ => _ => default.asInstanceOf[R[W]]
-//        case true => s => ih =>
-//          val p = s.asInstanceOf[Unit => ℕ](())
-//          next(p)(ih(p)).asInstanceOf[R[W]]
-//    )
+    def indT[R[_ <: ℕ]](
+      default: R[NatZero],
+      next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
+    ): ℿ[ℕ, R] = 𝕎.indT[𝔹, NatArity, R]:
+      ???
 
     def rec[C] = ind[Const[C]]
 
