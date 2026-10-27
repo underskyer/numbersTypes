@@ -52,26 +52,24 @@ object natWellFoundedNew:
       next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
     ): [N <: ℕ] => N => R[N] =
       𝕎.indT[𝔹, NatArity, R](
-        [i <: 𝔹] =>
-          (node: 𝕎.sup[𝔹, NatArity, i, ℕ]) =>
-            (rec: NatArity[i] => R[𝕎.sup[𝔹, NatArity, i, ℕ]]) =>
-              node.index match
-                case false =>
-                  // generic step ждёт sup[false, ℕ], а default имеет тип R[NatZero]
-                  default.asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
+        [i <: 𝔹] => node => ih =>
+          node match
+            case 𝕎.sup(false, _) =>
+              // default : R[NatZero] = R[sup[false, Nothing]]
+              // нужно: R[sup[i, ℕ]] с i <: false — W не совпадает
+              default.asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
 
-                case true =>
-                  // в ветке true фактически node : sup[true, ℕ]
-                  val n = node.asInstanceOf[𝕎.sup[𝔹, NatArity, true, ℕ]]
+            case 𝕎.sup(true, subtrees: Subtrees[𝔹, NatArity][true]) =>
+              // GADT-сужение по литералу true даёт j' =:= true,
+              // значит subtrees : NatArity[true] => ℕ = Unit => ℕ
+              val p = subtrees(())
 
-                  // NatArity[true] = Unit, поэтому единственный ребёнок — это ()
-                  val p: ℕ = n.subtrees(())
-
-                  // Важно: rec(()) имеет тип R[sup[true, ℕ]], а next[p.type]
-                  // хочет R[p.type]. Поэтому рекурсивно зовём indT на p,
-                  // сохраняя singleton-тип p.type.
-                  next[p.type](p)(indT[R](default, next)[p.type](p))
-                    .asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
+              // ih(()) : R[sup[true, ℕ]] = R[NatSucc[ℕ]],
+              // а next[ℕ] ждёт R[ℕ]. Плюс инвариантность R.
+              next(p)(ih(().asInstanceOf[NatArity[i]]).asInstanceOf[R[ℕ]])
+                // Если компилятор не свёл i =:= true в этой ветви,
+                // этот второй каст нужен; иначе — можно убрать.
+                .asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
       )
 
     def rec[C] = ind[Const[C]]
@@ -98,16 +96,17 @@ object natWellFoundedNew:
     // Состояние: (fib(k), fib(k+1), накопленный кортеж длины k)
     type FibState[N <: ℕ] = (Int, Int, TupleFamily[N])
 
-    val fibInductor = ℕ.ind[FibState](
+    val fibInductorN = ℕ.ind[FibState](
       default = (0, 1, EmptyTuple),
       next = [_ <: ℕ] => prev =>
         case (a, b, tup) => (b, a + b, b *: tup)
     )
-//    val fibInductor = ℕ.indw[FibState](
-//      default = (0, 1, EmptyTuple),
-//      next = w => prev =>
-//        case (a, b, tup) => (b, a + b, (b *: tup).asInstanceOf[TupleFamily[w.type]])
-//    )
+    val fibInductorT = ℕ.indT[FibState](
+      default = (0, 1, EmptyTuple),
+      next = [P <: ℕ] => prev =>
+        case (a, b, tup) => (b, a + b, b *: tup)
+    )
+    val fibInductor = fibInductorN
 
     // Печать кортежа в естественном порядке (разворачиваем накопленный)
     def showTupleNatural(t: Tuple): String =
@@ -121,8 +120,8 @@ object natWellFoundedNew:
     println("--- Числа Фибоначчи ---")
     println(s"f0 = ${showTupleNatural(fibInductor(n0)._3)}") // ()
     println(s"f1 = ${showTupleNatural(fibInductor(n1)._3)}") // (1)
-    println(s"f2 = ${showTupleNatural(fibInductor(n2: ℕ)._3)}") // (1, 1)
-    println(s"f3 = ${showTupleNatural(fibInductor(n3: ℕ)._3)}") // (1, 1, 2)
+    println(s"f2 = ${showTupleNatural(fibInductor(n2)._3)}") // (1, 1)
+    println(s"f3 = ${showTupleNatural(fibInductor(n3)._3)}") // (1, 1, 2)
     println(s"f4 = ${showTupleNatural(fibInductor(n4: ℕ)._3)}") // (1, 1, 2, 3)
     println(s"f5 = ${showTupleNatural(fibInductor(n5: ℕ)._3)}") // (1, 1, 2, 3, 5)
     println(s"f6 = ${showTupleNatural(fibInductor(n6: ℕ)._3)}") // (1, 1, 2, 3, 5, 8)
