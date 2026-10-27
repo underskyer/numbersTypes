@@ -7,7 +7,7 @@ object wellFoundedNew:
 
   //final case class 𝕎[I, B[_ <: I]](index: I, subtrees: B[index.type] => 𝕎[I, B])
 
-  type Subtrees[I, B[_ <: I]] = [i <: I] =>> B[i] => 𝕎[I, B]
+  type Subtrees[I, B[_ <: I]] = Brn[I, B, 𝕎[I, B]] // [i <: I] =>> B[i] => 𝕎[I, B]
 
   enum 𝕎[I, B[_ <: I]]:
     case sup[J, BB[_ <: J], j <: J, +W <: 𝕎[J, BB]](
@@ -24,7 +24,7 @@ object wellFoundedNew:
         R[w.type]
     ): ℿ[𝕎[I, B], R] = w => w match
       case sup(index, subtrees) =>
-        step[index.type](w)(index)(subtrees.asInstanceOf[Subtrees[I, B][index.type]])(ind(step))
+        step(w)(index)(subtrees.asInstanceOf[Subtrees[I, B][index.type]])(ind(step))
 
     def indT[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
       step: [i <: I] =>
