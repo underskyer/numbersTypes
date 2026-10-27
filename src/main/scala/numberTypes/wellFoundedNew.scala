@@ -10,7 +10,7 @@ object wellFoundedNew:
   type Subtrees[I, B[_ <: I]] = [i <: I] =>> B[i] => 𝕎[I, B]
 
   enum 𝕎[I, B[_ <: I]]:
-    case sup[J, BB[_ <: J], j <: J, W <: 𝕎[J, BB]](
+    case sup[J, BB[_ <: J], j <: J, +W <: 𝕎[J, BB]](
       index: j,
       subtrees: Subtrees[J, BB][j]
     ) extends 𝕎[J, BB]

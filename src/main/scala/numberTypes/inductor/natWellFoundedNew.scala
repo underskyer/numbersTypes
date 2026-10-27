@@ -4,6 +4,8 @@ import numberTypes.*
 import numberTypes.piTypes.ℿ
 import numberTypes.wellFoundedNew.*
 
+import scala.annotation.unchecked.uncheckedVariance
+
 object natWellFoundedNew:
 
   type NatArity[I <: 𝔹] = I match
@@ -32,43 +34,29 @@ object natWellFoundedNew:
           case false => _ => _ => default.asInstanceOf[R[w.type]]
           case true => subtrees => ih =>
             val p: ℕ = subtrees.asInstanceOf[Unit => ℕ](())
-            // w = sup(true, s), p = s(()). R[NatSucc[p.type]] и R[w.type]
-            // описывают одно и то же натуральное число, но интенсионально
-            // — разные типы.
             next(p)(ih(p)).asInstanceOf[R[w.type]]
 
     def indw[R[_ <: ℕ]](
       default: R[NatZero],
-      next: (w: ℕ) => (p: ℕ) => R[p.type] => R[w.type]
+      next: (p: ℕ) => R[p.type] => R[NatSucc[p.type]]
     ): ℿ[ℕ, R] = 𝕎.ind[𝔹, NatArity, R]:
       [J <: 𝔹] => w =>
         case false => _ => _ => default.asInstanceOf[R[w.type]]
         case true => subtrees => ih =>
           val p = subtrees.asInstanceOf[Unit => ℕ](())
-          next(w)(p)(ih(p))
+          next(p)(ih(p)).asInstanceOf[R[w.type]]
 
-    def indT[R[_ <: ℕ]](
+    def indT[R[+_ <: ℕ]](
       default: R[NatZero],
       next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
     ): [N <: ℕ] => N => R[N] =
       𝕎.indT[𝔹, NatArity, R](
         [i <: 𝔹] => node => ih =>
           node match
-            case 𝕎.sup(false, _) =>
-              // default : R[NatZero] = R[sup[false, Nothing]]
-              // нужно: R[sup[i, ℕ]] с i <: false — W не совпадает
-              default.asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
-
+            case 𝕎.sup(false, _) => default.asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
             case 𝕎.sup(true, subtrees: Subtrees[𝔹, NatArity][true]) =>
-              // GADT-сужение по литералу true даёт j' =:= true,
-              // значит subtrees : NatArity[true] => ℕ = Unit => ℕ
               val p = subtrees(())
-
-              // ih(()) : R[sup[true, ℕ]] = R[NatSucc[ℕ]],
-              // а next[ℕ] ждёт R[ℕ]. Плюс инвариантность R.
-              next(p)(ih(().asInstanceOf[NatArity[i]]).asInstanceOf[R[ℕ]])
-                // Если компилятор не свёл i =:= true в этой ветви,
-                // этот второй каст нужен; иначе — можно убрать.
+              next(p)(ih(().asInstanceOf[NatArity[i]]))
                 .asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
       )
 
@@ -80,9 +68,9 @@ object natWellFoundedNew:
     println("     NEW ФУНДИРОВАННЫЕ НАТУРАЛЬНЫЕ ЧИСЛА          ")
     println("==================================================")
 
-    type TupleFamily[I <: ℕ] <: Tuple = I match
+    type TupleFamily[+I <: ℕ] <: Tuple = (I @uncheckedVariance) match
       case 𝕎.sup[𝔹, NatArity, false, Nothing] => EmptyTuple
-      case 𝕎.sup[𝔹, NatArity, true, p] => Int *: TupleFamily[p]
+      case 𝕎.sup[𝔹, NatArity, true , p      ] => Int *: TupleFamily[p]
 
 
     val n0 = ℕ.zero
@@ -94,7 +82,7 @@ object natWellFoundedNew:
 
     // ===== Числа Фибоначчи =====
     // Состояние: (fib(k), fib(k+1), накопленный кортеж длины k)
-    type FibState[N <: ℕ] = (Int, Int, TupleFamily[N])
+    type FibState[+N <: ℕ] = (Int, Int, TupleFamily[N])
 
     val fibInductorN = ℕ.ind[FibState](
       default = (0, 1, EmptyTuple),
