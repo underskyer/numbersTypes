@@ -25,8 +25,7 @@ object wellFoundedNew:
 
     def indT[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
       step: [i <: I] =>
-        i =>
-        Subtrees[I, B][i, 𝕎[I, B]] =>
+        sup[I, B, i, 𝕎[I, B]] =>
         ℿ[sup[I, B, i, 𝕎[I, B]], R] =>
         R[sup[I, B, i, 𝕎[I, B]]]
     ): ℿ[𝕎[I, B], R] =
