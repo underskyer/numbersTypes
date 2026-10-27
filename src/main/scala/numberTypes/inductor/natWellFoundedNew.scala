@@ -47,18 +47,18 @@ object natWellFoundedNew:
           val p = subtrees.asInstanceOf[Unit => ℕ](())
           next(w)(p)(ih(p))
 
-    def indT[R[_ <: ℕ]](
-      default: R[NatZero],
-      next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
-    ): ℿ[ℕ, R] = 𝕎.indT[𝔹, NatArity, R]:
-      ???
+//    def indT[R[_ <: ℕ]](
+//      default: R[NatZero],
+//      next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
+//    ): ℿ[ℕ, R] = 𝕎.indT[𝔹, NatArity, R]:
+//      ???
 
     def rec[C] = ind[Const[C]]
 
   object test:
 
     println("==================================================")
-    println("         ФУНДИРОВАННЫЕ НАТУРАЛЬНЫЕ ЧИСЛА          ")
+    println("     NEW ФУНДИРОВАННЫЕ НАТУРАЛЬНЫЕ ЧИСЛА          ")
     println("==================================================")
 
     type TupleFamily[I <: ℕ] <: Tuple = I match
