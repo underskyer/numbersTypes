@@ -7,22 +7,20 @@ object wellFoundedNew:
   type Subtrees[I, B[_ <: I]] = [i <: I] =>> B[i] => 𝕎[I, B] // Brn[I, B, 𝕎[I, B]]
 
   enum 𝕎[I, B[_ <: I]]:
-    case sup[J, BB[_ <: J], j <: J, +W <: 𝕎[J, BB]](
+    case sup[J, Brn[_ <: J], j <: J, +W <: 𝕎[J, Brn]](
       index: j,
-      subtrees: Subtrees[J, BB][j]
-    ) extends 𝕎[J, BB]
+      subtrees: Subtrees[J, Brn][j]
+    ) extends 𝕎[J, Brn]
 
   object 𝕎:
 
     def ind[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
-      alg: [i <: I] =>
-        (w: sup[I, B, i, 𝕎[I, B]]) =>
-        ℿ[𝕎[I, B], R] => // компромисс, чуть более широкий, чем (b: B[w.index]) => R[w.subtrees(b)]
+      alg:
+        (w: 𝕎[I, B]) =>  // (i, subtrees(i))
+        ℿ[𝕎[I, B], R] => // компромисс, чуть более широкий тип, чем (b: B[w.index]) => R[w.subtrees(b)]
         R[w.type]
     ): ℿ[𝕎[I, B], R] = w => w match
-      case vv @ sup(index, subtrees) =>
-        alg(vv)(ind(alg))
-          .asInstanceOf[R[w.type]]
+      case sup(index, subtrees) => alg(w)(ind(alg))
 
     def indT[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
       alg: [i <: I] =>

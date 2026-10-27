@@ -30,7 +30,7 @@ object natWellFoundedNew:
       next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
     ): ℿ[ℕ, R] =
       𝕎.ind[𝔹, NatArity, R]:
-        [J <: 𝔹] => w => w match
+        w => w match
           case 𝕎.sup(false, _) => _ => default.asInstanceOf[R[w.type]]
           case 𝕎.sup(true, subtrees) => ih =>
             val p: ℕ = subtrees.asInstanceOf[Unit => ℕ](())
