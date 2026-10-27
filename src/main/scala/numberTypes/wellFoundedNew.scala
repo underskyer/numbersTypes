@@ -8,7 +8,7 @@ object wellFoundedNew:
   //final case class 𝕎[I, B[_ <: I]](index: I, subtrees: B[index.type] => 𝕎[I, B])
 
   type Subtrees[I, B[_ <: I]] = [i <: I] =>> B[i] => 𝕎[I, B]
-  
+
   enum 𝕎[I, B[_ <: I]]:
     case sup[J, BB[_ <: J], j <: J, W <: 𝕎[J, BB]](
       index: j,
@@ -18,23 +18,26 @@ object wellFoundedNew:
   object 𝕎:
 
     def ind[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
-      step: [J <: I] => (w: 𝕎[I, B]) =>
-        (i: J) =>
-        (s: Subtrees[I, B][J]) =>
+      step: [i <: I] => (w: 𝕎[I, B]) =>
+        (i: i) => (s: Subtrees[I, B][i]) =>
         (ih: ℿ[𝕎[I, B], R]) =>
         R[w.type]
     ): ℿ[𝕎[I, B], R] = w => w match
       case sup(index, subtrees) =>
         step[index.type](w)(index)(subtrees.asInstanceOf[Subtrees[I, B][index.type]])(ind(step))
 
-//    def indT[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
-//      step: [i <: I] =>
-//        sup[I, B, i, 𝕎[I, B]] =>
-//        ([Bi :> B[I]] => Bi => ) =>
-//        R[sup[I, B, i, 𝕎[I, B]]]
-//    ): ℿ[𝕎[I, B], R] =
-//      w => w match
-//        case sup(index, subtrees) => step(index)(subtrees)(indT(step)).asInstanceOf[R[w.type]]
+    def indT[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
+      step: [i <: I] =>
+        sup[I, B, i, 𝕎[I, B]] => // (i, subtrees(i))
+        (B[i] => R[sup[I, B, i, 𝕎[I, B]]]) =>
+        R[sup[I, B, i, 𝕎[I, B]]]
+    ): [W <: 𝕎[I, B]] => W => R[W] =
+      [W <: 𝕎[I, B]] => w => w match
+        case sup(index, subtrees) =>
+          val st = subtrees.asInstanceOf[B[index.type] => 𝕎[I, B]]
+          step[index.type](sup(index, st))(b =>
+            indT[I, B, R](step)(st(b).asInstanceOf[sup[I, B, index.type, 𝕎[I, B]]])
+          ).asInstanceOf[R[W]]
 
 
   end 𝕎

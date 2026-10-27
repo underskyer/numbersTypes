@@ -47,11 +47,32 @@ object natWellFoundedNew:
           val p = subtrees.asInstanceOf[Unit => ℕ](())
           next(w)(p)(ih(p))
 
-//    def indT[R[_ <: ℕ]](
-//      default: R[NatZero],
-//      next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
-//    ): ℿ[ℕ, R] = 𝕎.indT[𝔹, NatArity, R]:
-//      ???
+    def indT[R[_ <: ℕ]](
+      default: R[NatZero],
+      next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
+    ): [N <: ℕ] => N => R[N] =
+      𝕎.indT[𝔹, NatArity, R](
+        [i <: 𝔹] =>
+          (node: 𝕎.sup[𝔹, NatArity, i, ℕ]) =>
+            (rec: NatArity[i] => R[𝕎.sup[𝔹, NatArity, i, ℕ]]) =>
+              node.index match
+                case false =>
+                  // generic step ждёт sup[false, ℕ], а default имеет тип R[NatZero]
+                  default.asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
+
+                case true =>
+                  // в ветке true фактически node : sup[true, ℕ]
+                  val n = node.asInstanceOf[𝕎.sup[𝔹, NatArity, true, ℕ]]
+
+                  // NatArity[true] = Unit, поэтому единственный ребёнок — это ()
+                  val p: ℕ = n.subtrees(())
+
+                  // Важно: rec(()) имеет тип R[sup[true, ℕ]], а next[p.type]
+                  // хочет R[p.type]. Поэтому рекурсивно зовём indT на p,
+                  // сохраняя singleton-тип p.type.
+                  next[p.type](p)(indT[R](default, next)[p.type](p))
+                    .asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
+      )
 
     def rec[C] = ind[Const[C]]
 
