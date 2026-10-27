@@ -19,12 +19,11 @@ object wellFoundedNew:
 
     def ind[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
       step: [i <: I] => (w: 𝕎[I, B]) =>
-        (i: i) => (s: Subtrees[I, B][i]) =>
         (ih: ℿ[𝕎[I, B], R]) =>
         R[w.type]
     ): ℿ[𝕎[I, B], R] = w => w match
       case sup(index, subtrees) =>
-        step(w)(index)(subtrees.asInstanceOf[Subtrees[I, B][index.type]])(ind(step))
+        step(w)(ind(step))
 
     def indT[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
       step: [i <: I] =>
