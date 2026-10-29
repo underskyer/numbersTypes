@@ -27,14 +27,14 @@ object natWellFoundedNew:
 
     def ind[R[_ <: ℕ]](
       default: R[NatZero],
-      next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
+      next: (n: ℕ) => R[n.type] => R[NatSucc[n.type]]
     ): ℿ[ℕ, R] =
       𝕎.ind[𝔹, NatArity, R]:
-        w => w match
-          case 𝕎.sup(false, _) => _ => default.asInstanceOf[R[w.type]]
+        n => n match
+          case 𝕎.sup(false,       _) => _  => default.asInstanceOf[R[n.type]]
           case 𝕎.sup(true, subtrees) => ih =>
-            val p = subtrees(true)(())
-            next(p)(ih(p)).asInstanceOf[R[w.type]]
+            val prev = subtrees(true)(())
+            next(prev)(ih(prev)).asInstanceOf[R[n.type]]
 
 //    def indT[R[+_ <: ℕ]](
 //      default: R[NatZero],
@@ -76,7 +76,7 @@ object natWellFoundedNew:
 
     val fibInductorN = ℕ.ind[FibState](
       default = (0, 1, EmptyTuple),
-      next = [_ <: ℕ] => prev =>
+      next = prev =>
         case (a, b, tup) => (b, a + b, b *: tup)
     )
 //    val fibInductorT = ℕ.indT[FibState](
