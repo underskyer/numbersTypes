@@ -24,6 +24,7 @@ def main() =
 //  mTrees.test
   natInductor.test
   natWellFoundedNew.test
+  bTree.test
 
 
 

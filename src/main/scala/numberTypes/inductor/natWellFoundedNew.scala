@@ -21,8 +21,8 @@ object natWellFoundedNew:
     case 𝕎.sup[𝔹, NatArity, true, p] => p & ℕ
 
   object ℕ:
-    val zero:               NatZero    = 𝕎.sup[𝔹, NatArity, false, Nothing](false, _ => _.asInstanceOf[Nothing])
-    def succ[P <: ℕ](p: P): NatSucc[P] = 𝕎.sup[𝔹, NatArity,  true, P      ](true, _ => _ => p)
+    val zero:               NatZero    = 𝕎.sup(false, _ => _.asInstanceOf[Nothing])
+    def succ[P <: ℕ](p: P): NatSucc[P] = 𝕎.sup(true, _ => _ => p)
 
     def ind[R[_ <: ℕ]](
       default: R[NatZero],
