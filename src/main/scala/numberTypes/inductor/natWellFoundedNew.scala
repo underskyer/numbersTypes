@@ -16,10 +16,9 @@ object natWellFoundedNew:
   type NatZero         = 𝕎.sup[𝔹, NatArity, false, Nothing]
   type NatSucc[P <: ℕ] = 𝕎.sup[𝔹, NatArity, true, P]
 
-//  // todo не работает!!
-//  type NatPrev[N <: ℕ] <: ℕ = N match
-//    case NatZero => Nothing
-//    case μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Brn[𝔹, NatArity, p], true]] => p & ℕ
+  type NatPrev[N <: ℕ] <: ℕ = N match
+    case NatZero => Nothing
+    case 𝕎.sup[𝔹, NatArity, true, p] => p & ℕ
 
   object ℕ:
     val zero:               NatZero    = 𝕎.sup[𝔹, NatArity, false, Nothing](false, _ => _.asInstanceOf[Nothing])
@@ -31,8 +30,8 @@ object natWellFoundedNew:
     ): ℿ[ℕ, R] =
       𝕎.ind[𝔹, NatArity, R]:
         n => n match
-          case 𝕎.sup(false,       _) => _  => default.asInstanceOf[R[n.type]]
-          case 𝕎.sup(true, subtrees) => ih =>
+          case 𝕎.sup(false,        _) => _  => default.asInstanceOf[R[n.type]]
+          case 𝕎.sup(true , subtrees) => ih =>
             val prev = subtrees(true)(())
             next(prev)(ih(prev)).asInstanceOf[R[n.type]]
 
@@ -69,6 +68,7 @@ object natWellFoundedNew:
 
     summon[NatSucc[NatZero] <:< ℕ]
     summon[NatSucc[NatSucc[NatZero]] <:< ℕ]
+    summon[NatPrev[NatSucc[NatSucc[NatZero]]] =:= NatSucc[NatZero]]
 
     // ===== Числа Фибоначчи =====
     // Состояние: (fib(k), fib(k+1), накопленный кортеж длины k)
