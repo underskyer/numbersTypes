@@ -16,7 +16,7 @@ object wellFoundedNew:
 
     def ind[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
       alg:
-        (w: 𝕎[I, B]) =>  // (i, subtrees(i))
+        (w: 𝕎[I, B]) =>  // (i, st: Subtrees(i))
         ℿ[𝕎[I, B], R] => // компромисс, чуть более широкий тип, чем (b: B[w.index]) => R[w.subtrees(b)]
         R[w.type]
     ): ℿ[𝕎[I, B], R] = alg(_)(ind(alg))
