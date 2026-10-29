@@ -36,19 +36,19 @@ object natWellFoundedNew:
             val p: ℕ = subtrees.asInstanceOf[Unit => ℕ](())
             next(p)(ih(p)).asInstanceOf[R[w.type]]
 
-    def indT[R[+_ <: ℕ]](
-      default: R[NatZero],
-      next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
-    ): [N <: ℕ] => N => R[N] =
-      𝕎.indT[𝔹, NatArity, R](
-        [i <: 𝔹] => node => ih =>
-          node match
-            case 𝕎.sup(false, _) => default.asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
-            case 𝕎.sup(true, subtrees: Subtrees[𝔹, NatArity][true]) =>
-              val p = subtrees(())
-              next(p)(ih(().asInstanceOf[NatArity[i]]))
-                .asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
-      )
+//    def indT[R[+_ <: ℕ]](
+//      default: R[NatZero],
+//      next: [P <: ℕ] => (p: P) => R[P] => R[NatSucc[P]]
+//    ): [N <: ℕ] => N => R[N] =
+//      𝕎.indT[𝔹, NatArity, R](
+//        [i <: 𝔹] => node => ih =>
+//          node match
+//            case 𝕎.sup(false, _) => default.asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
+//            case 𝕎.sup(true, subtrees: Subtrees[𝔹, NatArity][true]) =>
+//              val p = subtrees(())
+//              next(p)(ih(().asInstanceOf[NatArity[i]]))
+//                .asInstanceOf[R[𝕎.sup[𝔹, NatArity, i, ℕ]]]
+//      )
 
     def rec[C] = ind[Const[C]]
 
@@ -79,11 +79,11 @@ object natWellFoundedNew:
       next = [_ <: ℕ] => prev =>
         case (a, b, tup) => (b, a + b, b *: tup)
     )
-    val fibInductorT = ℕ.indT[FibState](
-      default = (0, 1, EmptyTuple),
-      next = [P <: ℕ] => prev =>
-        case (a, b, tup) => (b, a + b, b *: tup)
-    )
+//    val fibInductorT = ℕ.indT[FibState](
+//      default = (0, 1, EmptyTuple),
+//      next = [P <: ℕ] => prev =>
+//        case (a, b, tup) => (b, a + b, b *: tup)
+//    )
     val fibInductor = fibInductorN
 
     // Печать кортежа в естественном порядке (разворачиваем накопленный)
