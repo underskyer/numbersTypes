@@ -22,8 +22,8 @@ object natWellFoundedNew:
 //    case μᵢ.In[ℙ[𝔹, NatArity], InΣ[𝔹, Brn[𝔹, NatArity, p], true]] => p & ℕ
 
   object ℕ:
-    val zero:               NatZero    = 𝕎.sup[𝔹, NatArity, false, Nothing](false, identity[Nothing])
-    def succ[P <: ℕ](p: P): NatSucc[P] = 𝕎.sup[𝔹, NatArity,  true, P      ](true, _ => p)
+    val zero:               NatZero    = 𝕎.sup[𝔹, NatArity, false, Nothing](false, i => (x: NatArity[i.type]) => x.asInstanceOf[Nothing])
+    def succ[P <: ℕ](p: P): NatSucc[P] = 𝕎.sup[𝔹, NatArity,  true, P      ](true, _ => _ => p)
 
     def ind[R[_ <: ℕ]](
       default: R[NatZero],
@@ -33,7 +33,7 @@ object natWellFoundedNew:
         w => w match
           case 𝕎.sup(false, _) => _ => default.asInstanceOf[R[w.type]]
           case 𝕎.sup(true, subtrees) => ih =>
-            val p: ℕ = subtrees.asInstanceOf[Unit => ℕ](())
+            val p = subtrees(true)(())
             next(p)(ih(p)).asInstanceOf[R[w.type]]
 
 //    def indT[R[+_ <: ℕ]](
