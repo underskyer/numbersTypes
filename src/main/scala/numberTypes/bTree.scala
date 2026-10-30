@@ -4,6 +4,7 @@ import numberTypes.*
 import numberTypes.piTypes.ℿ
 import numberTypes.wellFoundedNew.*
 
+import scala.Tuple.++
 import scala.annotation.unchecked.uncheckedVariance
 
 object bTree:
@@ -40,6 +41,8 @@ object bTree:
                 
                 nodeCase[left.type, right.type](a)(leftR)(rightR).asInstanceOf[R[tree.type]]
 
+    def rec[A, R] = ind[A, Const[R]]
+
 
   object test:
 
@@ -47,54 +50,46 @@ object bTree:
     println("     БИНАРНЫЕ ДЕРЕВЬЯ (T = 1 + A × T × T)        ")
     println("==================================================")
 
-    // ===== Семейство типов: кортеж листьев дерева =====
-    // Для TreeLeaf — пустой кортеж, для TreeNode — A *: (левый кортеж) *: (правый кортеж)
-    type LeafTupleFamily[+I <: Tree[Option[Int]]] <: Tuple = (I @uncheckedVariance) match
-      case 𝕎.sup[Option[Option[Int]], TreeArity[Option[Int]], Option[Nothing], Nothing] => EmptyTuple
-      case 𝕎.sup[Option[Option[Int]], TreeArity[Option[Int]], Some[Option[Int]], _] =>
-        Option[Int] *: LeafTupleFamily[Tree[Option[Int]]]
-
     // Построение деревьев
-    val leaf = Tree.leaf[Option[Int]]
-    val tNode1 = Tree.node(Some(1), leaf, leaf)
-    val tNode2 = Tree.node(Some(2), leaf, leaf)
-    val tNodeRoot = Tree.node(Some(0), tNode1, tNode2)
+    val leaf = Tree.leaf[Int]
+    val tNode1 = Tree.node(1, leaf, leaf)
+    val tNode2 = Tree.node(2, leaf, leaf)
+    val tNodeRoot = Tree.node(0, tNode1, tNode2)
 
     // ===== Подсчёт листьев через зависимую индукцию =====
-    type LeafCount = Const[Int]
-
-    val leafCount: ℿ[Tree[Option[Int]], LeafCount] = Tree.ind[Option[Int], LeafCount](
-      leafCase = 1,
-      nodeCase = [TL, TR] => _ => l => r => l + r
-    )
+    val leafCount = Tree.rec[Int, Int](1, [TL, TR] => _ => l => r => l + r)
 
     println("--- Подсчёт листьев ---")
     println(s"leaves(leaf)        = ${leafCount(leaf)}") // 1
     println(s"leaves(node(l,r))   = ${leafCount(tNode1)}") // 2
     println(s"leaves(root)        = ${leafCount(tNodeRoot)}") // 4
 
-    // ===== Накопление листьев в кортеже (зависимый мотив) =====
-    type AccumFamily[+I <: Tree[Option[Int]]] <: Tuple = (I @uncheckedVariance) match
-      case 𝕎.sup[Option[Option[Int]], TreeArity[Option[Int]], Option[Nothing], Nothing] => EmptyTuple
-      case 𝕎.sup[Option[Option[Int]], TreeArity[Option[Int]], Some[Option[Int]], t] =>
-        Option[Int] *: LeafTupleFamily[𝕎.sup[Option[Option[Int]], TreeArity[Option[Int]], Some[Option[Int]], t]]
+    // ===== Семейство типов: кортеж листьев дерева =====
+    type LeafTupleFamily[I <: Tree[Int]] <: Tuple = I match
+      case 𝕎.sup[Option[Int], TreeArity[Int], Option[Nothing], Nothing] => EmptyTuple
+      case 𝕎.sup[Option[Int], TreeArity[Int], Some[Int], t] =>
+        Int *: (LeafTupleFamily[t] ++ LeafTupleFamily[t])
 
-    // Исправленная версия с правильным рекурсивным вызовом
-    def accumLeaves[I <: Tree[Option[Int]]](tree: I): Tuple = tree match
-      case 𝕎.sup(None, _) => EmptyTuple
-      case 𝕎.sup(optA@Some(a), subtrees) =>
-        val left = subtrees(optA)(false.asInstanceOf[TreeArity[Option[Int]][optA.type]])
-        val right = subtrees(optA)(true.asInstanceOf[TreeArity[Option[Int]][optA.type]])
-        a *: accumLeaves(left) ++ accumLeaves(right)
+    // ===== Накопление листьев в кортеже (зависимый мотив) =====
+    def accumLeaves = Tree.ind[Int, LeafTupleFamily](
+      leafCase = EmptyTuple,
+      nodeCase = [TL <: Tree[Int], TR <: Tree[Int]] => a => lTup => rTup =>
+        (a *: (lTup ++ rTup))
+          .asInstanceOf[LeafTupleFamily[TreeNode[Int][TL, TR]]]
+    )
 
     // ===== Проверки подтипов =====
-    summon[tNode1.type <:< Tree[Option[Int]]]
-    summon[tNodeRoot.type <:< Tree[Option[Int]]]
+    summon[tNode1.type <:< Tree[Int]]
+    summon[tNodeRoot.type <:< TreeNode[Int][tNode1.type, tNode2.type]]
+    
+    val r1 = accumLeaves(leaf): EmptyTuple
+    val r2 = accumLeaves(tNode1)//: Tuple1[Int]
+    val r3 = accumLeaves(tNodeRoot)//: (Int, Int, Int)
 
     println("--- Накопление листьев в кортеже ---")
-    println(s"leaves(tLeaf)       = ${accumLeaves(leaf)}") // ()
-    println(s"leaves(tNode1)      = ${accumLeaves(tNode1)}") // (Some(1))
-    println(s"leaves(tNodeRoot)   = ${accumLeaves(tNodeRoot)}") // (Some(0), Some(1), Some(2))
+    println(s"leaves(tLeaf)       = $r1") // ()
+    println(s"leaves(tNode1)      = $r2") // (Some(1))
+    println(s"leaves(tNodeRoot)   = $r3") // (Some(0), Some(1), Some(2))
 
     println("==================================================")
 
