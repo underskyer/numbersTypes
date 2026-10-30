@@ -16,16 +16,16 @@ object bTree:
   type Tree[A] = 𝕎[Option[A], TreeArity[A]]
 
   type TreeLeaf[A] = 𝕎.sup[Option[A], TreeArity[A], Option[Nothing], Nothing]
-  type TreeNode[A] = [TL <: Tree[A], TR <: Tree[A]] =>> 𝕎.sup[Option[A], TreeArity[A], Some[A], TL | TR] // да, теряется порядок
+  type TreeNode[A] = 𝕎.sup[Option[A], TreeArity[A], Some[A], Tree[A]] // да, теряется всё
   
   object Tree:
     def leaf[A]: TreeLeaf[A] = 𝕎.sup[Option[A], TreeArity[A], Option[Nothing], Nothing](None, _ => _.asInstanceOf[Nothing])
-    def node[A](a: A, left: Tree[A], right: Tree[A]): TreeNode[A][left.type, right.type] =
+    def node[A](a: A, left: Tree[A], right: Tree[A]): TreeNode[A] =
       𝕎.sup(Some(a), _ => if _ then right else left)
 
     def ind[A, R[_ <: Tree[A]]](
       leafCase: R[TreeLeaf[A]],
-      nodeCase: A => (left: Tree[A], right: Tree[A]) => (R[left.type], R[right.type]) => R[TreeNode[A][left.type, right.type]]
+      nodeCase: A => (left: Tree[A], right: Tree[A]) => (R[left.type], R[right.type]) => R[TreeNode[A]]
     ): ℿ[Tree[A], R] =
       𝕎.ind[Option[A], TreeArity[A], R]:
         tree => tree match
@@ -75,12 +75,12 @@ object bTree:
       leafCase = EmptyTuple,
       nodeCase = a => (l, r) => (lTup, rTup) =>
         (a *: (lTup ++ rTup))
-          .asInstanceOf[LeafTupleFamily[TreeNode[Int][l.type, r.type]]]
+          .asInstanceOf[LeafTupleFamily[TreeNode[Int]]]
     )
 
     // ===== Проверки подтипов =====
     summon[tNode1.type <:< Tree[Int]]
-    summon[tNodeRoot.type <:< TreeNode[Int][tNode1.type, tNode2.type]]
+    summon[tNodeRoot.type <:< Tree[Int]]
     
     val r1 = accumLeaves(leaf): EmptyTuple
     val r2 = accumLeaves(tNode1)//: Tuple1[Int]
