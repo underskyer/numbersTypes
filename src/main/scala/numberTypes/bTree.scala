@@ -25,7 +25,7 @@ object bTree:
 
     def ind[A, R[_ <: Tree[A]]](
       leafCase: R[TreeLeaf[A]],
-      nodeCase: [TL <: Tree[A], TR <: Tree[A]] => A => R[TL] => R[TR] => R[TreeNode[A][TL, TR]]
+      nodeCase: A => (left: Tree[A], right: Tree[A]) => (R[left.type], R[right.type]) => R[TreeNode[A][left.type, right.type]]
     ): ℿ[Tree[A], R] =
       𝕎.ind[Option[A], TreeArity[A], R]:
         tree => tree match
@@ -39,7 +39,7 @@ object bTree:
                 val leftR = ih(left)
                 val rightR = ih(right)
                 
-                nodeCase[left.type, right.type](a)(leftR)(rightR).asInstanceOf[R[tree.type]]
+                nodeCase(a)(left, right)(leftR, rightR).asInstanceOf[R[tree.type]]
 
     def rec[A, R] = ind[A, Const[R]]
 
@@ -57,7 +57,7 @@ object bTree:
     val tNodeRoot = Tree.node(0, tNode1, tNode2)
 
     // ===== Подсчёт листьев через зависимую индукцию =====
-    val leafCount = Tree.rec[Int, Int](1, [TL, TR] => _ => l => r => l + r)
+    val leafCount = Tree.rec[Int, Int](1, _ => (_, _) => (l, r) => l + r)
 
     println("--- Подсчёт листьев ---")
     println(s"leaves(leaf)        = ${leafCount(leaf)}") // 1
@@ -65,17 +65,17 @@ object bTree:
     println(s"leaves(root)        = ${leafCount(tNodeRoot)}") // 4
 
     // ===== Семейство типов: кортеж листьев дерева =====
-    type LeafTupleFamily[I <: Tree[Int]] <: Tuple = I match
+    type LeafTupleFamily[+I <: Tree[Int]] <: Tuple = (I @uncheckedVariance) match
       case 𝕎.sup[Option[Int], TreeArity[Int], Option[Nothing], Nothing] => EmptyTuple
-      case 𝕎.sup[Option[Int], TreeArity[Int], Some[Int], t] =>
+      case 𝕎.sup[Option[Int], TreeArity[Int], Some[Int],       t      ] =>
         Int *: (LeafTupleFamily[t] ++ LeafTupleFamily[t])
 
     // ===== Накопление листьев в кортеже (зависимый мотив) =====
     def accumLeaves = Tree.ind[Int, LeafTupleFamily](
       leafCase = EmptyTuple,
-      nodeCase = [TL <: Tree[Int], TR <: Tree[Int]] => a => lTup => rTup =>
+      nodeCase = a => (l, r) => (lTup, rTup) =>
         (a *: (lTup ++ rTup))
-          .asInstanceOf[LeafTupleFamily[TreeNode[Int][TL, TR]]]
+          .asInstanceOf[LeafTupleFamily[TreeNode[Int][l.type, r.type]]]
     )
 
     // ===== Проверки подтипов =====
