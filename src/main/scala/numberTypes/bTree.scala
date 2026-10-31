@@ -19,9 +19,9 @@ object bTree:
   type TreeNode[A] = 𝕎.sup[Option[A], TreeArity[A], Some[A], Tree[A]] // да, теряется всё
   
   object Tree:
-    def leaf[A]: TreeLeaf[A] = 𝕎.sup[Option[A], TreeArity[A], Option[Nothing], Nothing](None, _ => _.asInstanceOf[Nothing])
+    def leaf[A]: TreeLeaf[A] = 𝕎.sup[Option[A], TreeArity[A], Option[Nothing], Nothing](None, _.asInstanceOf[Nothing])
     def node[A](a: A, left: Tree[A], right: Tree[A]): TreeNode[A] =
-      𝕎.sup(Some(a), _ => if _ then right else left)
+      𝕎.sup(Some(a), if _ then right else left)
 
     def ind[A, R[_ <: Tree[A]]](
       leafCase: R[TreeLeaf[A]],
@@ -31,10 +31,10 @@ object bTree:
         tree => tree match
             case 𝕎.sup(None, _) =>
               _ => leafCase.asInstanceOf[R[tree.type]]
-            case 𝕎.sup(optA@Some(a), subtrees) =>
+            case 𝕎.sup(Some(a), subtrees: (Boolean => Tree[A])) =>
               ih =>
-                val left = subtrees(optA)(false.asInstanceOf[TreeArity[A][optA.type]])
-                val right = subtrees(optA)(true.asInstanceOf[TreeArity[A][optA.type]])
+                val left = subtrees(false)
+                val right = subtrees(true)
                 
                 val leftR = ih(left)
                 val rightR = ih(right)
@@ -70,10 +70,9 @@ object bTree:
       case 𝕎.sup[Option[Int], TreeArity[Int], Some[Int],       t      ] =>
         Int *: (LeafTupleFamily[t] ++ LeafTupleFamily[t])
 
-    // ===== Накопление листьев в кортеже (зависимый мотив) =====
-    def accumLeaves = Tree.ind[Int, LeafTupleFamily](
-      leafCase = EmptyTuple,
-      nodeCase = a => (l, r) => (lTup, rTup) =>
+    def accumValues = Tree.ind[Int, LeafTupleFamily](
+      EmptyTuple,
+      a => (l, r) => (lTup, rTup) =>
         (a *: (lTup ++ rTup))
           .asInstanceOf[LeafTupleFamily[TreeNode[Int]]]
     )
@@ -82,14 +81,14 @@ object bTree:
     summon[tNode1.type <:< Tree[Int]]
     summon[tNodeRoot.type <:< Tree[Int]]
     
-    val r1 = accumLeaves(leaf): EmptyTuple
-    val r2 = accumLeaves(tNode1)//: Tuple1[Int]
-    val r3 = accumLeaves(tNodeRoot)//: (Int, Int, Int)
+    val r1 = accumValues(leaf): EmptyTuple
+    val r2 = accumValues(tNode1)//: Tuple1[Int]
+    val r3 = accumValues(tNodeRoot)//: (Int, Int, Int)
 
-    println("--- Накопление листьев в кортеже ---")
-    println(s"leaves(tLeaf)       = $r1") // ()
-    println(s"leaves(tNode1)      = $r2") // (Some(1))
-    println(s"leaves(tNodeRoot)   = $r3") // (Some(0), Some(1), Some(2))
+    println("--- Накопление значений узлов в кортеже ---")
+    println(s"values(leaf)        = $r1") // ()
+    println(s"values(tNode1)      = $r2") // (Some(1))
+    println(s"values(tNodeRoot)   = $r3") // (Some(0), Some(1), Some(2))
 
     println("==================================================")
 

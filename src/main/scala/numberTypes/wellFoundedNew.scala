@@ -4,18 +4,15 @@ import numberTypes.piTypes.ℿ
 
 object wellFoundedNew:
 
-  type Subtrees[I, B[_ <: I], +W <: 𝕎[I, B]] = (i: I) => B[i.type] => W // Brn[I, B, 𝕎[I, B]]
+  //type Subtrees[I, B[_ <: I], i <: I, +W <: 𝕎[I, B]] = B[i] => W
 
   enum 𝕎[I, B[_ <: I]]:
     case sup[J, Brn[_ <: J], j <: J, +Subtree <: 𝕎[J, Brn]](
       index: j,
-      subtrees: Subtrees[J, Brn, Subtree]
+      subtrees: Brn[index.type] => Subtree
     ) extends 𝕎[J, Brn]
 
   object 𝕎:
-
-    extension [I, B[_ <: I], i <: I, W <: 𝕎[I, B]](w: sup[I, B, i, W])
-      def branches: B[w.index.type] => W = w.subtrees(w.index)
 
     def ind[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
       alg:

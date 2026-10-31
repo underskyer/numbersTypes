@@ -21,8 +21,8 @@ object natWellFoundedNew:
     case 𝕎.sup[𝔹, NatArity, true, p] => p & ℕ
 
   object ℕ:
-    val zero:               NatZero    = 𝕎.sup(false, _ => _.asInstanceOf[Nothing])
-    def succ[P <: ℕ](p: P): NatSucc[P] = 𝕎.sup(true, _ => _ => p)
+    val zero:               NatZero    = 𝕎.sup(false, _.asInstanceOf[Nothing])
+    def succ[P <: ℕ](p: P): NatSucc[P] = 𝕎.sup(true, _ => p)
 
     def ind[R[_ <: ℕ]](
       default: R[NatZero],
@@ -31,8 +31,8 @@ object natWellFoundedNew:
       𝕎.ind[𝔹, NatArity, R]:
         n => n match
           case 𝕎.sup(false,        _) => _  => default.asInstanceOf[R[n.type]]
-          case 𝕎.sup(true , subtrees) => ih =>
-            val prev = subtrees(true)(())
+          case 𝕎.sup(true , subtrees: (Unit => ℕ)) => ih =>
+            val prev = subtrees(())
             next(prev)(ih(prev)).asInstanceOf[R[n.type]]
 
 //    def indT[R[+_ <: ℕ]](
