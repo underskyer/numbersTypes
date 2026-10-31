@@ -7,12 +7,15 @@ object wellFoundedNew:
   type Subtrees[I, B[_ <: I], +W <: 𝕎[I, B]] = (i: I) => B[i.type] => W // Brn[I, B, 𝕎[I, B]]
 
   enum 𝕎[I, B[_ <: I]]:
-    case sup[J, Brn[_ <: J], j <: J, +W <: 𝕎[J, Brn]](
+    case sup[J, Brn[_ <: J], j <: J, +Subtree <: 𝕎[J, Brn]](
       index: j,
-      subtrees: Subtrees[J, Brn, W]
+      subtrees: Subtrees[J, Brn, Subtree]
     ) extends 𝕎[J, Brn]
 
   object 𝕎:
+
+    extension [I, B[_ <: I], i <: I, W <: 𝕎[I, B]](w: sup[I, B, i, W])
+      def branches: B[w.index.type] => W = w.subtrees(w.index)
 
     def ind[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
       alg:
@@ -21,19 +24,7 @@ object wellFoundedNew:
         R[w.type]
     ): ℿ[𝕎[I, B], R] = alg(_)(ind(alg))
 
-//    def indT[I, B[_ <: I], R[_ <: 𝕎[I, B]]](
-//      alg: [i <: I] =>
-//        sup[I, B, i, 𝕎[I, B]] => // (i, subtrees(i))
-//        (B[i] => R[sup[I, B, i, 𝕎[I, B]]]) =>
-//        R[sup[I, B, i, 𝕎[I, B]]]
-//    ): [W <: 𝕎[I, B]] => W => R[W] =
-//      [W <: 𝕎[I, B]] => w => w match
-//        case sup(index, subtrees) =>
-//          val st = subtrees.asInstanceOf[B[index.type] => 𝕎[I, B]]
-//          alg[index.type](sup(index, st))(b =>
-//            indT[I, B, R](alg)(st(b).asInstanceOf[sup[I, B, index.type, 𝕎[I, B]]])
-//          ).asInstanceOf[R[W]]
-
+    def rec[I, B[_ <: I], R] = ind[I, B, Const[R]]
 
   end 𝕎
 
