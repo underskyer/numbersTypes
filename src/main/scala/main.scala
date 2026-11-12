@@ -26,5 +26,8 @@ def main() =
   natWellFoundedNew.test
   bTree.test
 
+  identityType.test
+  identityType.s1.test
+
 
 
