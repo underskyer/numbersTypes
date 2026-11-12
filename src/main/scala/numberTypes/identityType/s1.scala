@@ -19,10 +19,16 @@ object s1:
     def andThen[Z <: A](q: Path[A, Y, Z]): Path[A, X, Z] = Path.Trans(p, q)
 
   // 2. Тип окружности S¹: одна точка Base и один конструктор пути Loop
-  enum S1:
-    case Base
+  sealed trait S1:
+    // Метод зависимой индукции прямо на значении S1
+    def ind[P[_ <: S1]](b: P[S1.Base.type])(l: Path[P[S1.Base.type], P[S1.Base.type], P[S1.Base.type]]): P[this.type]
 
   object S1:
+    case object Base extends S1:
+      // Внутри Base компилятор точно знает, что this.type =:= Base.type,
+      // поэтому просто возвращаем b без каких-либо приведений!
+      def ind[P[_ <: S1]](b: P[Base.type])(l: Path[P[Base.type], P[Base.type], P[Base.type]]): P[this.type] = b
+
     // Каноническая образующая петля как обычный case object в иерархии Path
     case object loop extends Path[S1, S1.Base.type, S1.Base.type]
 
@@ -47,37 +53,25 @@ object s1:
     // b  — значение функции в базовой точке: P[Base].
     // l  — зависимый путь (PathOver): доказательство, что transport(Loop, b) совпадает с b в слое P[Base].
     // Возвращает зависимую функцию (x: S1) => P[x.type] и действие на петлях apd_f.
+    // Внешняя функция ind для привычного синтаксиса HoTT
     def ind[P[_ <: S1]](
-      tr: (Path[S1, S1.Base.type, S1.Base.type], P[S1.Base.type]) => P[S1.Base.type]
+      b: P[Base.type]
     )(
-      b: P[S1.Base.type]
-    )(
-      l: Path[P[S1.Base.type], P[S1.Base.type], P[S1.Base.type]]
+      l: Path[P[Base.type], P[Base.type], P[Base.type]]
     ): (
-        (x: S1) => P[x.type],
-        Path[S1, S1.Base.type, S1.Base.type] => Path[P[S1.Base.type], P[S1.Base.type], P[S1.Base.type]]
-      ) =
-      // Зависимая функция на точках: возвращаемый тип P[x.type] зависит от аргумента x
-      val onPoint: (x: S1) => P[x.type] = (x: S1) =>
-        x match
-          case S1.Base =>
-          // Свидетельство равенства типов S1.Base.type =:= x.type
-          summon[S1.Base.type =:= S1.Base.type]
-            .asInstanceOf[S1.Base.type =:= x.type]
-            .substituteCo[[X] =>> P[X & S1.Base.type]](b)
-            .asInstanceOf[P[x.type]]
+      (x: S1) => P[x.type],
+      Path[S1, Base.type, Base.type] => Path[P[Base.type], P[Base.type], P[Base.type]]
+    ) =
+      val onPoint: (x: S1) => P[x.type] = (x: S1) => x.ind[P](b)(l)
 
-      // Зависимое действие на путях (apd_f):
-      // Для любого пути p в S1 строит зависимый путь над p в слое P[Base]
-      def apd[X <: S1, Y <: S1](p: Path[S1, X, Y]): Path[P[S1.Base.type], P[S1.Base.type], P[S1.Base.type]] =
+      def apd(p: Path[S1, ?, ?]): Path[P[Base.type], P[Base.type], P[Base.type]] =
         p match
-          case S1.loop => l
-          case Path.Refl() => Path.Refl()
-          case Path.Sym(inner) => apd(inner).inverse
+          case loop             => l
+          case Path.Refl()      => Path.Refl()
+          case Path.Sym(inner)  => apd(inner).inverse
           case Path.Trans(p, q) => apd(p).andThen(apd(q))
 
       (onPoint, apd)
-
   // 3. Канонический код типа во Вселенной
   sealed trait TypeCode[T]
 
@@ -112,7 +106,7 @@ object s1:
     else if n > 0 then (1 to n).foldLeft[Path[S1, S1.Base.type, S1.Base.type]](Path.Refl())((acc, _) => acc.andThen(S1.loop))
     else (1 to -n).foldLeft[Path[S1, S1.Base.type, S1.Base.type]](Path.Refl())((acc, _) => acc.andThen(S1.loop.inverse))
 
-  
+
   // 5. Проверка работы
   object test:
     val succ: AutoEquiv[Int] = AutoEquiv(_ + 1, _ - 1)
@@ -141,14 +135,10 @@ object s1:
     // Задаём зависимое семейство типов P(x) = Path[S1, x, x] (тип петель в каждой точке x окружности)
     type LoopSpace[X <: S1] = Path[S1, X, X]
 
-    // Транспорт петли q вдоль пути p по формуле конъюгации: p⁻¹ ∙ q ∙ p
-    val conjugationTransport: (Path[S1, S1.Base.type, S1.Base.type], LoopSpace[S1.Base.type]) => LoopSpace[S1.Base.type] =
-      (p, q) => p.inverse.andThen(q).andThen(p)
-
     // В базовой точке Base выбираем каноническую петлю S1.Loop : LoopSpace[Base].
     // Поскольку в фундаментальной группе S¹ выполнено loop⁻¹ ∙ loop ∙ loop = loop (коммутативность),
     // зависимый путь над Loop тривиален (Refl).
-    val (canonicalLoops, apdLoops) = S1.ind[LoopSpace](conjugationTransport)(S1.loop)(Path.Refl())
+    val (canonicalLoops, apdLoops) = S1.ind[LoopSpace](S1.loop)(Path.Refl())
 
     // Получаем зависимую функцию (x: S1) => LoopSpace[x.type]
     val loopAtBase: LoopSpace[S1.Base.type] = canonicalLoops(S1.Base)

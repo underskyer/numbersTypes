@@ -28,6 +28,7 @@ def main() =
 
   identityType.test
   identityType.s1.test
+  identityType.s1new.test
 
 
 
