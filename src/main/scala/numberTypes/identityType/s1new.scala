@@ -5,7 +5,7 @@ import scala.compiletime.ops.boolean.!
 
 object s1new:
 
-  // 1. Индуктивный тип путей с точными синглтон-концами
+  // 1. Индуктивный тип путей с точными синглтон-концами (полностью полиморфный)
   sealed trait Path[A, X <: A, Y <: A]
 
   object Path:
@@ -20,7 +20,8 @@ object s1new:
     def inverse: Path.Sym[A, X, Y, P] = Path.Sym(p)
     def andThen[Z <: A, Q <: Path[A, Y, Z]](q: Q): Path.Trans[A, X, Y, Z, P, Q] = Path.Trans(p, q)
 
-  // 2. Честная одноточечная окружность S¹ (Base + Loop)
+  // 2. ЧИСТАЯ окружность S¹: знает ТОЛЬКО про Base, Loop и абстрактное расслоение Fibration.
+  // Никаких Int, Winding или Fiber внутри S1 больше нет!
   sealed trait S1:
     def ind[P[_ <: S1]](b: P[S1.Base.type]): P[this.type]
 
@@ -30,14 +31,7 @@ object s1new:
 
     case object Loop extends Path[S1, Base.type, Base.type]
 
-    // Подсчёт числа оборотов (winding number) на уровне типов
-    type Winding[P <: Path[S1, ?, ?]] <: Int = P match
-      case Path.Refl[S1, ?]              => 0
-      case S1.Loop.type                  => 1
-      case Path.Sym[S1, _, _, inner]     => 0 - Winding[inner]
-      case Path.Trans[S1, _, _, _, p, q] => Winding[p] + Winding[q]
-
-    // 3. Расслоение для простого мотива P[X <: S1]
+    // Абстрактный мотив индукции (Расслоение) над S¹
     trait Fibration[P[_ <: S1]]:
       type Layer
       type Transport[V <: Layer & Singleton] <: Layer
@@ -47,6 +41,8 @@ object s1new:
       def stepLoop(v: Layer): Layer
       def stepLoopInverse(v: Layer): Layer
 
+      // Универсальный транспорт вдоль любого пути Q на S¹,
+      // опирающийся только на структуру Path и шаги расслоения
       def transport[V <: Layer & Singleton, Q <: Path[S1, Base.type, Base.type]](
         v: V,
         path: Q
@@ -76,6 +72,7 @@ object s1new:
       val baseValue: B & fib.Layer & Singleton
     }
 
+    // Зависимый индуктор HoTT
     def ind[P[_ <: S1]](using F: Fibration[P])(
       b: F.Layer & Singleton & P[Base.type]
     )(
@@ -88,7 +85,7 @@ object s1new:
         def apd[Q <: Path[S1, Base.type, Base.type]](path: Q): fib.TransportPath[baseValue.type, Q] =
           fib.transport(baseValue, path)
 
-    // 3b. Зависимый от пути мотив P[X, Q] на честной одноточечной S¹
+    // Зависимый от пути мотив P[X, Q] на честной одноточечной S¹
     trait PathFibration[P[X <: S1, Q <: Path[S1, Base.type, X]]]:
       def overLoop[Q <: Path[S1, Base.type, Base.type]](
         current: P[Base.type, Q]
@@ -112,24 +109,35 @@ object s1new:
       new PathDependentSection[P]:
         def apply[Q <: Path[S1, Base.type, Base.type]](x: Base.type, path: Q): P[x.type, path.type] =
           PF.evalAlong(b, path).asInstanceOf[P[x.type, path.type]]
-
-    type Fiber[P <: Path[S1, ?, ?]] <: Int = P match
-      case Path.Refl[S1, ?]              => 0
-      case S1.Loop.type                  => 1
-      case Path.Sym[S1, _, _, inner]     => 0 - Fiber[inner]
-      case Path.Trans[S1, _, _, _, p, q] => Fiber[p] + Fiber[q]
-
-    def transport(p: Path[S1, S1.Base.type, S1.Base.type]): Fiber[p.type] =
-      def eval(curr: Path[S1, ?, ?]): Int = curr match
-        case Path.Refl()      => 0
-        case S1.Loop          => 1
-        case Path.Sym(inner)  => -eval(inner)
-        case Path.Trans(a, b) => eval(a) + eval(b)
-      eval(p).asInstanceOf[Fiber[p.type]]
   // =========================================================================
-  // БЛОК 1: Исходный тест на литеральных типах Int (0, 1, -4)
+  // БЛОК 1: Первоначальный test (вся логика Int вынесена из S1 сюда!)
   // =========================================================================
   object test:
+
+    type IntFiber[X <: S1] = Int
+
+    // Рекурсивный транспорт вдоль составного пути на уровне типов Int
+    type IntTransportPath[V <: Int, Q <: Path[S1, S1.Base.type, S1.Base.type]] <: Int = Q match
+      case Path.Refl[S1, ?]              => V
+      case S1.Loop.type                  => V + 1
+      case Path.Sym[S1, _, _, inner]     => IntTransportPathInv[V, inner]
+      case Path.Trans[S1, _, _, _, p, q] => IntTransportPath[IntTransportPath[V, p], q]
+
+    type IntTransportPathInv[V <: Int, Q <: Path[S1, S1.Base.type, S1.Base.type]] <: Int = Q match
+      case Path.Refl[S1, ?]              => V
+      case S1.Loop.type                  => V - 1
+      case Path.Sym[S1, _, _, inner]     => IntTransportPath[V, inner]
+      case Path.Trans[S1, _, _, _, p, q] => IntTransportPathInv[IntTransportPathInv[V, q], p]
+
+    given shiftFibration: S1.Fibration[IntFiber] with
+      type Layer = Int
+      type Transport[V <: Int] = V + 1
+      type TransportPath[V <: Int, Q <: Path[S1, S1.Base.type, S1.Base.type]] =
+        IntTransportPath[V, Q]
+
+      def transportValue[V <: (Int & Singleton)](v: V): Transport[V] = (v + 1).asInstanceOf[V + 1]
+      def stepLoop(v: Int): Int = v + 1
+      def stepLoopInverse(v: Int): Int = v - 1
 
     val p0 = Path.Refl[S1, S1.Base.type]()
     val p1 = S1.Loop
@@ -139,25 +147,14 @@ object s1new:
       .andThen(S1.Loop.inverse)
       .andThen(S1.Loop.inverse)
 
-    val v0: 0 = S1.transport(p0)
-    val v1: 1 = S1.transport(p1)
-    val v2: 2 = S1.transport(p2)
-    val vM4: -4 = S1.transport(pMinus4)
+    val zero: 0 = 0
+    val v0: 0 = shiftFibration.transport(zero, p0)
+    val v1: 1 = shiftFibration.transport(zero, p1)
+    val v2: 2 = shiftFibration.transport(zero, p2)
+    val vM4: -4 = shiftFibration.transport(zero, pMinus4)
 
     final case class IntStep[X <: Int, Y <: Int]() extends Path[Int, X, Y]
 
-    type IntFiber[X <: S1] = Int
-
-    given shiftFibration: S1.Fibration[IntFiber] with
-      type Layer = Int
-      type Transport[V <: Int] = V + 1
-      type TransportPath[V <: Int, Q <: Path[S1, S1.Base.type, S1.Base.type]] = V + S1.Winding[Q]
-
-      def transportValue[V <: (Int & Singleton)](v: V): Transport[V] = (v + 1).asInstanceOf[V + 1]
-      def stepLoop(v: Int): Int = v + 1
-      def stepLoopInverse(v: Int): Int = v - 1
-
-    val zero: 0 = 0
     val afterLoop: 1 = shiftFibration.transportValue(zero)
 
     val stepFromOneToZero: Path[Int, 1, 0] = IntStep()
@@ -204,10 +201,12 @@ object s1new:
   object spiralTest:
     type IntFiber[X <: S1] = Int
 
+    // Используем структурную рекурсию IntTransportPath из test вместо Winding внутри S1
     given spiralFibration: S1.Fibration[IntFiber] with
       type Layer = Int
       type Transport[V <: Int] = V + 1
-      type TransportPath[V <: Int, Q <: Path[S1, S1.Base.type, S1.Base.type]] = V + S1.Winding[Q]
+      type TransportPath[V <: Int, Q <: Path[S1, S1.Base.type, S1.Base.type]] =
+        test.IntTransportPath[V, Q]
 
       def transportValue[V <: (Int & Singleton)](v: V): Transport[V] = (v + 1).asInstanceOf[V + 1]
       def stepLoop(v: Int): Int = v + 1
@@ -231,12 +230,18 @@ object s1new:
     println(s"[Спираль] Значение в Base: ${sectionM4(S1.Base)}, поднятие пути (+2 - 1): $liftedFromM4")
 
   // =========================================================================
-  // БЛОК 4: Зависимый индуктор на ЧЕСТНОЙ S¹ с мотивом, зависящим от пути!
+  // БЛОК 4: Зависимый индуктор на честной S¹ с мотивом, зависящим от пути
   // =========================================================================
   object pathDependentTest:
 
-    // Мотив P[X, Q] зависит от числа оборотов пути Q: Base = Base!
-    type WindingTypedFiber[X <: S1, Q <: Path[S1, S1.Base.type, X]] = S1.Winding[Q] match
+    // Число оборотов вычисляется локально здесь, а не внутри S1
+    type LocalWinding[P <: Path[S1, ?, ?]] <: Int = P match
+      case Path.Refl[S1, ?]              => 0
+      case S1.Loop.type                  => 1
+      case Path.Sym[S1, _, _, inner]     => 0 - LocalWinding[inner]
+      case Path.Trans[S1, _, _, _, p, q] => LocalWinding[p] + LocalWinding[q]
+
+    type WindingTypedFiber[X <: S1, Q <: Path[S1, S1.Base.type, X]] = LocalWinding[Q] match
       case 0 => Int
       case 1 => String
       case 2 => Boolean
@@ -259,9 +264,9 @@ object s1new:
         current: WindingTypedFiber[S1.Base.type, Q]
       ): WindingTypedFiber[S1.Base.type, Path.Trans[S1, S1.Base.type, S1.Base.type, S1.Base.type, Q, S1.Loop.type]] =
         val nextW = current match
-          case n: Int      => 1
-          case s: String   => 2
-          case b: Boolean  => 3
+          case _: Int      => 1
+          case _: String   => 2
+          case _: Boolean  => 3
           case xs: List[?] => xs.asInstanceOf[List[Int]](1) + 1
         val base = current match
           case n: Int => n
