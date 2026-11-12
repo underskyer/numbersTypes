@@ -28,7 +28,9 @@ def main() =
 
   identityType.test
   identityType.s1.test
-  identityType.s1new.test
+  identityType.s1new.mobiusTest
+  identityType.s1new.spiralTest
+  identityType.s1new.pathDependentTest
 
 
 
