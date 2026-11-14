@@ -6,13 +6,19 @@ object wholeNumbers:
     case S[+P <: Nat](prev: P)
     case Z
 
+  def toInt(n: Nat): Int = n match
+    case Nat.Z    => 0
+    case Nat.S(p) => 1 + toInt(p)
+  def nat(n: Int): Nat = n match
+    case 0 => Nat.Z
+    case x if x > 0 => Nat.S(nat(x - 1))
+
   transparent inline def s[P <: Nat](p: P): Nat.S[P] = Nat.S(p)
   transparent inline def z: Z = Nat.Z
 
   export Nat.S
   type Z = Nat.Z.type
 
-  case class Val[+A, +B](a: A)
   case class Add[+A, +B](a: A, b: B)
   case class Mul[+A, +B](a: A, b: B)
   case class Sub[+A, +B](a: A, b: B)
@@ -31,13 +37,33 @@ object wholeNumbers:
     case (_, S[b]) => AddNatNorm[MulNatNorm[A, b], A]
 
   // Основной нормализатор: сначала вычисляет аргументы, затем применяет операцию
-  type NatNf[Expr] <: Nat = Expr match
+  type NatNF[Expr] <: Nat = Expr match
     case Z => Z
-    case S[n] => S[NatNf[n]]
-    case Add[a, b] => AddNatNorm[NatNf[a], NatNf[b]]
-    case Mul[a, b] => MulNatNorm[NatNf[a], NatNf[b]]
+    case S[n] => S[NatNF[n]]
+    case Add[a, b] => AddNatNorm[NatNF[a], NatNF[b]]
+    case Mul[a, b] => MulNatNorm[NatNF[a], NatNF[b]]
 
-  type NNat = Nat | Add[Nat, Nat] | Mul[Nat, Nat]
+  def addNat(a: Nat, b: Nat): Nat = b match
+    case Nat.Z     => a
+    case Nat.S(p)  => addNat(Nat.S(a), p)
+
+  def mulNat(a: Nat, b: Nat): Nat = b match
+    case Nat.Z     => Nat.Z
+    case Nat.S(p)  =>
+      a match
+        case Nat.Z => Nat.Z
+        case _     => addNat(mulNat(a, p), a)
+
+  def natNorm(a: NNat): Nat = a match
+    case _: Z        => Nat.Z
+    case s: S[?]     => Nat.S(natNorm(s.prev))
+    case Add(na, nb) => addNat(natNorm(na), natNorm(nb))
+    case Mul(na, nb) => mulNat(natNorm(na), natNorm(nb))
+
+
+  type Ring[A] = A | Add[A, A] | Mul[A, A]
+  type NNat = Ring[Nat]
+  //type NNat = Nat | Add[NNat, NNat] | Mul[NNat, NNat]
 
   type SubNf[Expr] = Expr match
     case Sub[S[a], S[b]] => SubNf[Sub[a, b]]
@@ -64,11 +90,18 @@ object wholeNumbers:
     summon[SubNf[Sub[S[S[Z]], S[S[S[Z]]]]] =:= Sub[Z, S[Z]]]
 
     val a: Mul[Nat.S[Z], Nat.S[Z]] = mul(s(z), s(z))
+    summon[NatNF[a.type] =:= S[Z]]
 
-    summon[NatNf[a.type] =:= S[Z]]
-
-    val aa: Mul[Add[Nat.S[Nat.S[Z]], Nat.S[Nat.S[Z]]], Add[Nat.S[Z], Nat.S[Z]]] = mul(add(s(s(z)), s(s(z))), add(s(z), s(z)))
+    val aa =
+      mul(add(s(s(z)), s(s(z))), add(s(z), s(z)))
 
     val b = mul(s(z), s(z))
-    summon[NatNf[b.type] <:< Nat]
+    summon[NatNF[b.type] <:< Nat]
+
+    def expr1[A, B, C](a: A, b: B, c: C) = mul(add(a, b), add(c, a))
+
+    val e1 = expr1(s(s(z)), s(z), z)
+
+
+    natNorm(e1)
 
