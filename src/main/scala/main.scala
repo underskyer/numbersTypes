@@ -26,5 +26,12 @@ def main() =
   natWellFoundedNew.test
   bTree.test
 
+  identityType.test
+  identityType.s1.test
+  identityType.s1new.mobiusTest
+  identityType.s1new.spiralTest
+  identityType.s1new.pathDependentTest
+  identityType.s2new.runS2()
+
 
 
