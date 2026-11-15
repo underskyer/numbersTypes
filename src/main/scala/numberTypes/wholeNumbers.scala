@@ -54,16 +54,9 @@ object wholeNumbers:
         case Nat.Z => Nat.Z
         case _     => addNat(mulNat(a, p), a)
 
-  def natNorm(a: NNat): Nat = a match
-    case _: Z        => Nat.Z
-    case s: S[?]     => Nat.S(natNorm(s.prev))
-    case Add(na, nb) => addNat(natNorm(na), natNorm(nb))
-    case Mul(na, nb) => mulNat(natNorm(na), natNorm(nb))
+  type Pointed[F[_], A] = [X] =>> A | F[X]
+  final case class Fix[F[_]](unfix: F[Fix[F]])
 
-
-  type Ring[A] = A | Add[A, A] | Mul[A, A]
-  type NNat = Ring[Nat]
-  //type NNat = Nat | Add[NNat, NNat] | Mul[NNat, NNat]
 
   type SubNf[Expr] = Expr match
     case Sub[S[a], S[b]] => SubNf[Sub[a, b]]
@@ -102,6 +95,4 @@ object wholeNumbers:
 
     val e1 = expr1(s(s(z)), s(z), z)
 
-
-    natNorm(e1)
 
