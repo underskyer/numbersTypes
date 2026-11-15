@@ -54,7 +54,7 @@ object wholeNumbers:
         case Nat.Z => Nat.Z
         case _     => addNat(mulNat(a, p), a)
 
-  def natNorm(a: NNat): Nat = a match
+  def natNorm(a: Any): Nat = a match
     case _: Z        => Nat.Z
     case s: S[?]     => Nat.S(natNorm(s.prev))
     case Add(na, nb) => addNat(natNorm(na), natNorm(nb))
@@ -103,5 +103,6 @@ object wholeNumbers:
     val e1 = expr1(s(s(z)), s(z), z)
 
 
-    natNorm(e1)
+    var res = natNorm(e1)
+    println("нормализация целого числа: " + toInt(res))
 

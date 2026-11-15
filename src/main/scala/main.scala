@@ -33,5 +33,7 @@ def main() =
   identityType.s1new.pathDependentTest
   identityType.s2new.runS2()
 
+  wholeNumbers.test
+
 
 
