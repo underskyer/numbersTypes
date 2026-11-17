@@ -1,6 +1,32 @@
 package numberTypes
 
+import numberTypes.wholeNumbersDyn.ToFree.tree
+
 object wholeNumbersDyn:
+
+  // Fix[Pointed[F, A]]
+  enum Free[F[+_], +A]:
+    case Pure(a: A)
+    case Suspend(unfix: F[Free[F, A]])
+
+  trait Morph[F[+_], A, T]:
+    def apply(t: T): Free[F, A]
+
+  type ToFree[F[+_], A] = [T] =>> Morph[F, A, T]
+  //type ToFree[F[+_], A] = [X] =>> X => Free[F, A]
+
+  type Inject[F[_]] = [G[_]] =>> G ~> F
+
+  object ToFree:
+    def apply[F[+_], A] = [E: ToFree[F, A] as tf] => (e: E) => tf(e)
+    
+    given atom[A, F[+_]]: ToFree[F, A][A] = Free.Pure[F, A](_)
+
+    given tree: [G[+_]: {Functor as G, Inject[F] as toF}, A, X: ToFree[F, A] as toFree, F[+_]] => ToFree[F, A][G[X]] =
+      (G(toFree(_)) andThen  toF[Free[F, A]] andThen Free.Suspend[F, A])(_)
+  end ToFree
+
+  infix type ++[F[_], G[_]] = [X] =>> F[X] | G[X]
 
   enum Nat:
     case S[+P <: Nat](prev: P)
@@ -21,14 +47,16 @@ object wholeNumbersDyn:
 
   case class Add[+A](a: A, b: A)
   case class Mul[+A](a: A, b: A)
-  case class Sub[+A](a: A, b: A)
-  case class Div[+A](a: A, b: A)
 
-  transparent inline def add[A](a: A, b: A): Add[A] = Add(a, b)
-  transparent inline def mul[A](a: A, b: A): Mul[A] = Mul(a, b)
+  given injectUnion: [F[_], G[x] <: F[x]] => Inject[F][G] = [A] => ga => ga
+  given addFunctor: Functor[Add] = [A, B] => f => { case Add(a, b) => Add(f(a), f(b)) }
+  given mulFunctor: Functor[Mul] = [A, B] => f => { case Mul(a, b) => Mul(f(a), f(b)) }
 
-
+  type Algebra[F[_]] = [A] =>> F[A] => A
+  type NatAlgebra = Algebra[Free[Add ++ Mul, *]][Nat]
 
   object test:
 
-    ???
+    def expr[A](x: A, y: A, z: A) = Mul(Add(x, y), Add(y, z))
+
+    ToFree[Add ++ Mul, Int](expr(1, 2, 3))
