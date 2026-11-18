@@ -1,7 +1,5 @@
 package numberTypes
 
-import numberTypes.wholeNumbersDyn.ToFree.tree
-
 object wholeNumbersDyn:
 
   // Fix[Pointed[F, A]]
@@ -9,41 +7,27 @@ object wholeNumbersDyn:
     case Pure(a: A)
     case Suspend(unfix: F[Free[F, A]])
 
-  trait Morph[F[+_], A, T]:
-    def apply(t: T): Free[F, A]
-
-  type ToFree[F[+_], A] = [T] =>> Morph[F, A, T]
-  //type ToFree[F[+_], A] = [X] =>> X => Free[F, A]
-
   type Inject[F[_]] = [G[_]] =>> G ~> F
 
-  object ToFree:
+  object Free:
     def apply[F[+_], A] = [E: ToFree[F, A] as tf] => (e: E) => tf(e)
-    
-    given atom[A, F[+_]]: ToFree[F, A][A] = Free.Pure[F, A](_)
 
-    given tree: [G[+_]: {Functor as G, Inject[F] as toF}, A, X: ToFree[F, A] as toFree, F[+_]] => ToFree[F, A][G[X]] =
-      (G(toFree(_)) andThen  toF[Free[F, A]] andThen Free.Suspend[F, A])(_)
-  end ToFree
+    type ToFree[F[+_], A] = [X] =>> X => Free[F, A]
 
-  infix type ++[F[_], G[_]] = [X] =>> F[X] | G[X]
+    given atom[A, F[+_]]: ToFree[F, A][A] = Free.Pure[F, A]
 
-  enum Nat:
-    case S[+P <: Nat](prev: P)
-    case Z
+    given tree: [F[+_], A, G[+_]: {Functor as G, Inject[F] as toF}, X: ToFree[F, A] as toFree] => ToFree[F, A][G[X]] =
+      G(toFree) andThen toF[Free[F, A]] andThen Free.Suspend[F, A]
 
-  def toInt(n: Nat): Int = n match
-    case Nat.Z    => 0
-    case Nat.S(p) => 1 + toInt(p)
-  def nat(n: Int): Nat = n match
-    case 0 => Nat.Z
-    case x if x > 0 => Nat.S(nat(x - 1))
+    def fold[F[+_]: Functor as F, A](alg: Algebra[F][A]): Algebra[Free[F, *]][A] =
+      case Pure(a) => a
+      case Suspend(fa) => alg(F(fold(alg))(fa))
 
-  transparent inline def s[P <: Nat](p: P): Nat.S[P] = Nat.S(p)
-  transparent inline def z: Z = Nat.Z
+  end Free
 
-  export Nat.S
-  type Z = Nat.Z.type
+  extension [F[+_] : Functor as F, A](fa: Free[F, A])
+    inline def fold(alg: Algebra[F][A]): A = Free.fold(alg)(fa)
+
 
   case class Add[+A](a: A, b: A)
   case class Mul[+A](a: A, b: A)
@@ -51,12 +35,25 @@ object wholeNumbersDyn:
   given injectUnion: [F[_], G[x] <: F[x]] => Inject[F][G] = [A] => ga => ga
   given addFunctor: Functor[Add] = [A, B] => f => { case Add(a, b) => Add(f(a), f(b)) }
   given mulFunctor: Functor[Mul] = [A, B] => f => { case Mul(a, b) => Mul(f(a), f(b)) }
+//  given compFunctor: [F[+_]: Functor as F, G[+_]: Functor as G] => Functor[F ++ G] = [A, B] => f =>
+//    //(fga: (F ++ G)[A]) => fga match
+//      case fa: F[A] => F.map(f)(fa): (F ++ G)[B]
+//      case ga: G[A] => G.map(f)(ga): (F ++ G)[B]
 
-  type Algebra[F[_]] = [A] =>> F[A] => A
-  type NatAlgebra = Algebra[Free[Add ++ Mul, *]][Nat]
 
   object test:
 
-    def expr[A](x: A, y: A, z: A) = Mul(Add(x, y), Add(y, z))
+    def expr[A](x: A, y: A, z: A, ы: A) = Mul(Add(x, y), Add(z, ы))
 
-    ToFree[Add ++ Mul, Int](expr(1, 2, 3))
+    val ll: Free[Add ++ Mul, Int] = Free[Add ++ Mul, Int](expr(1, 2, 3, 4))
+
+    given addMullFunctor: Functor[Add ++ Mul] = [A, B] => f =>
+      case fa: Add[A] => addFunctor(f)(fa)
+      case ga: Mul[A] => mulFunctor(f)(ga)
+
+    val res = ll.fold:
+      case Add(a, b) => a + b
+      case Mul(a, b) => a * b
+
+    println("=============== wholeNumbersDyn ================")
+    println(res)

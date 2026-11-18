@@ -34,6 +34,7 @@ def main() =
   identityType.s2new.runS2()
 
   wholeNumbers.test
+  wholeNumbersDyn.test
 
 
 
