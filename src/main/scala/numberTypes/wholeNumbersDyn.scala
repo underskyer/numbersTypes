@@ -9,6 +9,9 @@ object wholeNumbersDyn:
 
   type Inject[F[_]] = [G[_]] =>> G ~> F
 
+  given inl: [F[+_], G[+_]] => Inject[F ++ G][F] = [X] => fx => Left [F[X], Nothing](fx)
+  given inr: [F[+_], G[+_]] => Inject[G ++ F][F] = [X] => fx => Right[Nothing, F[X]](fx)
+  
   object Free:
     def apply[F[+_], A] = [E: ToFree[F, A] as tf] => (e: E) => tf(e)
 
@@ -32,7 +35,7 @@ object wholeNumbersDyn:
   case class Add[+A](a: A, b: A)
   case class Mul[+A](a: A, b: A)
 
-  given injectUnion: [F[_], G[x] <: F[x]] => Inject[F][G] = [A] => ga => ga
+  //given injectUnion: [F[_], G[x] <: F[x]] => Inject[F][G] = [A] => ga => ga
   given addFunctor: Functor[Add] = [A, B] => f => { case Add(a, b) => Add(f(a), f(b)) }
   given mulFunctor: Functor[Mul] = [A, B] => f => { case Mul(a, b) => Mul(f(a), f(b)) }
 //  given compFunctor: [F[+_]: Functor as F, G[+_]: Functor as G] => Functor[F ++ G] = [A, B] => f =>
@@ -48,12 +51,12 @@ object wholeNumbersDyn:
     val ll: Free[Add ++ Mul, Int] = Free[Add ++ Mul, Int](expr(1, 2, 3, 4))
 
     given addMullFunctor: Functor[Add ++ Mul] = [A, B] => f =>
-      case fa: Add[A] => addFunctor(f)(fa)
-      case ga: Mul[A] => mulFunctor(f)(ga)
+      case Left(fa)  => Left( addFunctor(f)(fa))
+      case Right(ga) => Right(mulFunctor(f)(ga))
 
     val res = ll.fold:
-      case Add(a, b) => a + b
-      case Mul(a, b) => a * b
+      case Left( Add(a, b)) => a + b
+      case Right(Mul(a, b)) => a * b
 
     println("=============== wholeNumbersDyn ================")
     println(res)

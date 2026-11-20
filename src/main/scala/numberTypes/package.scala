@@ -5,7 +5,7 @@ type 𝔹 = Boolean & Singleton
 infix type ×[A, B] = (A, B)
 infix type +[A, B] = A Either B
 
-infix type ++[F[_], G[_]] = [X] =>> F[X] | G[X]
+infix type ++[F[_], G[_]] = [X] =>> F[X] + G[X]
 
 infix type ∘[F[_], G[_]] = [A] =>> F[G[A]]
 infix type ~>[F[_], G[_]] = [A] => F[A] => G[A]
