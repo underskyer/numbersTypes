@@ -36,5 +36,7 @@ def main() =
   wholeNumbers.test
   wholeNumbersDyn.test
 
+  factorisation.test
+
 
 

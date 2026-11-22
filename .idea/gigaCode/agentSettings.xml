@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GigaCodeAgentSettings">
+    <option name="autoApprovedCommands">
+      <list>
+        <Execute>
+          <option name="pattern" value="cd *" />
+        </Execute>
+        <Execute>
+          <option name="pattern" value="sbt compile *" />
+        </Execute>
+        <Execute>
+          <option name="pattern" value="java -version 2&gt;&amp;1" />
+        </Execute>
+      </list>
+    </option>
+  </component>
+</project>
