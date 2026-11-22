@@ -391,4 +391,13 @@ object factorisation:
 
     type RealResult = RealQuotient[Sub[Nat, Nat], Nat, SubEqs]
     summon[RealResult =:= Option[(Boolean, Nat)]]
-    
+//
+//    type AddEqs = Tuple1[
+//      Eq[
+//        PairT[S_T[Var["a"]], Var["b"]],
+//        PairT[Var["a"], S_T[Var["b"]]]
+//      ]
+//    ]
+//    type RealResult2 = RealQuotient[Sub[Nat, Nat], Nat, AddEqs]
+//    summon[RealResult2 =:= Nat]
+//    
