@@ -295,12 +295,58 @@ object factorisation:
       ]
     ]
 
+  // =========================================================================
+  // 5.5. РЕАЛЬНЫЕ ТИПЫ И ТРАНСЛЯЦИЯ FType <-> РЕАЛЬНЫЙ ТИП
+  // =========================================================================
+
+  // Реальный (не фантомный) Nat.
+  sealed trait Nat
+  case object Z extends Nat
+  case class S(prev: Nat) extends Nat
+
+  // Реальная пара для задачи Sub[Nat, Nat] ~ (Nat, Nat).
+  case class Sub[A, B](a: A, b: B)
+
+  // Перевод реального типа в фантомный FType.
+  type ToFType[T] <: FType = T match
+    case Unit          => One.type
+    case Nat           => Sum[One.type, Rec.type]
+    case Boolean       => Sum[One.type, One.type]
+    case (a, b)        => Prod[ToFType[a], ToFType[b]]
+    case Sub[a, b]     => Prod[ToFType[a], ToFType[b]]
+    case Either[a, b]  => Sum[ToFType[a], ToFType[b]]
+    case Option[a]     => Sum[One.type, ToFType[a]]
+
+  // Правая ассоциативность сумм: (a + b) + c -> a + (b + c).
+  // Без этого FromFType не "увидит" в Sum[Sum[One, Rec], Rec] шаблон
+  // Sum[One, Sum[Rec, Rec]] = Option[(Boolean, Nat)].
+  type ReassocSum[T <: FType] <: FType = T match
+    case Sum[Sum[a, b], c] => ReassocSum[Sum[a, Sum[b, c]]]
+    case Sum[a, b]         => Sum[ReassocSum[a], ReassocSum[b]]
+    case _                 => T
+
+  // Перевод FType обратно в реальный тип.
+  type FromFType[T <: FType] <: Any = T match
+    case Zero.type                => Nothing
+    case One.type                 => Unit
+    case Rec.type                 => Nat
+    case Sum[One.type, One.type]  => Boolean
+    case Sum[Rec.type, Rec.type]  => (Boolean, Nat)
+    case Sum[One.type, x]         => Option[FromFType[x]]
+    case Sum[x, One.type]         => Option[FromFType[x]]
+    case Sum[a, b]                => Either[FromFType[a], FromFType[b]]
+    case Prod[a, b]               => (FromFType[a], FromFType[b])
+
+  // Итоговый оператор: реальный тип -> FType -> факторизация -> реальный тип.
+  type RealQuotient[Init, RecBody, Eqs <: Tuple] =
+    FromFType[ReassocSum[QuotientType[ToFType[Init], ToFType[RecBody], Eqs]]]
+
   object test:
     // =========================================================================
     // 7. ПРОВЕРКА РАБОТОСПОСОБНОСТИ
     // =========================================================================
     type NatF = Sum[One.type, Rec.type]
-  
+
     // ТЕСТ 1: Замыкание по вычитанию (S(a), S(b)) ~ (a, b)
     type SubEqs = Tuple1[
       Eq[
@@ -308,15 +354,32 @@ object factorisation:
         PairT[Var["a"], Var["b"]]
       ]
     ]
-  
+
     type ZType = QuotientType[Prod[NatF, NatF], NatF, SubEqs]
     summon[ZType =:= Sum[Sum[One.type, Rec.type], Rec.type]]
-  
+
     // ТЕСТ 2: Факторизация по модулю 2: S(S(x)) ~ x (плюс избыточное правило)
     type Mod2Eqs = (
       Eq[S_T[S_T[Var["x"]]], Var["x"]],
       Eq[S_T[S_T[S_T[Var["y"]]]], S_T[Var["y"]]]
     )
-  
+
     type BoolType = QuotientType[NatF, NatF, Mod2Eqs]
     summon[BoolType =:= Sum[One.type, One.type]]
+
+    // =========================================================================
+    // ТЕСТ 3: Факторизация РЕАЛЬНОГО типа Sub[Nat, Nat] ~ (Nat, Nat)
+    // =========================================================================
+    // Вход  : реальный тип Sub[Nat, Nat].
+    // Отношение: (S a, S b) ~ (a, b)  (то есть (a, b) ~ (a - k, b - k)).
+    // Классы: [(0,0)], [(m,0)]_{m>0}, [(0,n)]_{n>0}  =>  1 + 2·Nat.
+    // Выход : Option[(Boolean, Nat)].
+    type RealSubEqs = Tuple1[Eq[
+      PairT[S_T[Var["a"]], S_T[Var["b"]]],
+      PairT[Var["a"], Var["b"]]
+    ]]
+
+    type RealResult = RealQuotient[Sub[Nat, Nat], Nat, RealSubEqs]
+
+    // Проверка: результат действительно Option[(Boolean, Nat)].
+    summon[RealResult =:= Option[(Boolean, Nat)]]
