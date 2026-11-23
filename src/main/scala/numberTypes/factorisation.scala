@@ -20,6 +20,10 @@ object factorisation:
   case class Var[Name <: String]() extends Term
   case object UnitT extends Term
   case class S_T[A <: Term]() extends Term
+  // PairT — единственный «контейнер» языка: он моделирует ПАРУ значений
+  // (произведение). Никаких отдельных конструкторов для операций здесь нет:
+  // любая операция над числами (сложение, вычитание, ...) — это та же пара,
+  // различие задаётся только УРАВНЕНИЯМИ, а не формой терма.
   case class PairT[A <: Term, B <: Term]() extends Term
 
   case class Eq[L <: Term, R <: Term]()
@@ -284,33 +288,146 @@ object factorisation:
   // =========================================================================
   // 6. ИТОГОВЫЙ УНИВЕРСАЛЬНЫЙ ОПЕРАТОР ФАКТОРИЗАЦИИ ТИПА
   // =========================================================================
+  // Уравнение Eq[l, r] действует на тип одним из двух способов. Выбор
+  // определяется ТОЛЬКО весами частей, то есть свойством самого уравнения, —
+  // оператор ничего не знает о том, какая житейская операция за ним стоит:
+  //
+  //   1) Weight[l] > Weight[r] (или наоборот) — уравнение ОРИЕНТИРУЕМО.
+  //      Тогда это правило переписывания, и страта (моном), накрытая его
+  //      левой частью, «вычитается» (SubtractRules). Так работает замыкание,
+  //      которое ПОРОЖДАЕТ новые элементы: (S a, S b) ~ (a, b) даёт Z.
+  //
+  //   2) Weight[l] = Weight[r] — ориентировать нельзя (части «одного
+  //      размера»), это СИММЕТРИЯ. Она ничего не вычитает, а ОТОЖДЕСТВЛЯЕТ:
+  //      страты, накрытые частями уравнения, описывают одни и те же классы и
+  //      сливаются в одну страту Rec (классов, пронумерованных рекурсией,
+  //      столько же) — MergeIdentified. Так работает замыкание, которое новых
+  //      элементов НЕ даёт: (S a, b) ~ (a, S b) оставляет Nat = Nat.
+  //
+  //   3) Если множество классов описывается ровно телом рекурсии
+  //      (T =:= RecBody), фактор-тип — это сам рекурсивный тип (FixCheck).
+  //      Это не «спец-случай под Nat»: факторизация Nat по пустому набору
+  //      уравнений тоже обязана дать Nat, а не Option[Nat].
   type QuotientType[InitType <: FType, RecBody <: FType, Eqs <: Tuple] =
-    QuotientWithRules[InitType, RecBody, KnuthBendix[Eqs]]
+    QuotientWith[InitType, RecBody, KnuthBendix[Eqs], SymmetricEqs[Eqs]]
 
-  type QuotientWithRules[InitType <: FType, RecBody <: FType, Rules <: Tuple] =
-    Simplify[
-      SubtractRules[
-        Distribute[Unroll[InitType, RecBody, MaxRulesDepth[Rules]]],
-        Rules
-      ]
+  type QuotientWith[
+      InitType <: FType,
+      RecBody <: FType,
+      Rules <: Tuple,
+      Syms <: Tuple
+  ] =
+    FixCheck[
+      Simplify[
+        MergeIdentified[
+          SubtractRules[
+            Distribute[Unroll[InitType, RecBody, MaxRulesDepth[Rules]]],
+            Rules
+          ],
+          Syms,
+          RecBody
+        ]
+      ],
+      RecBody
     ]
 
+  // ----- 6.1. Разделение уравнений по ориентируемости -----------------------
+
+  // Ориентируемо ли уравнение: части разного веса.
+  type IsOrientable[L <: Term, R <: Term] =
+    (Weight[L] > Weight[R]) || (Weight[R] > Weight[L])
+
+  // Уравнения с равными весами — симметрии (их KnuthBendix отбрасывает,
+  // потому что переписывать в одну сторону нельзя).
+  type SymmetricEqs[Eqs <: Tuple] <: Tuple = Eqs match
+    case EmptyTuple => EmptyTuple
+    case Eq[l, r] *: t =>
+      IsOrientable[l, r] match
+        case true  => SymmetricEqs[t]
+        case false => Eq[l, r] *: SymmetricEqs[t]
+
+  // ----- 6.2. Страты терма уравнения ---------------------------------------
+
+  // Множество стран (мономов), которые накрывает терм уравнения.
+  // Отличие от TermToPattern: переменная пробегает ВСЕ страты рекурсивного
+  // типа (RecBody), а S_T срезает нулевую страту. Поэтому у (S a, b) и
+  // (a, S b) наборы стран РАЗНЫЕ, а у (S a, S b) и (a, b) — вложенные друг в
+  // друга: именно это различает симметрию и ориентируемое правило.
+  type PatternStrata[T <: Term, RecBody <: FType] <: FType = T match
+    case Var[_]      => RecBody
+    case UnitT.type  => One.type
+    case S_T[a]      => StripFirst[PatternStrata[a, RecBody]]
+    case PairT[a, b] => Prod[PatternStrata[a, RecBody], PatternStrata[b, RecBody]]
+
+  // Срезание нулевой страты: положительные значения — это тип без нуля.
+  type StripFirst[T <: FType] <: FType = T match
+    case Sum[One.type, b] => StripFirst[b]
+    case Sum[a, One.type] => StripFirst[a]
+    case _                => T
+
+  // ----- 6.3. Слияние стран, отождествлённых симметрией --------------------
+
+  type InStrata[Tup <: Tuple, X] <: Boolean = Tup match
+    case EmptyTuple => false
+    case h *: t     => IsSame[h, X] || InStrata[t, X]
+
+  type StratumList[T <: FType] <: Tuple = T match
+    case Sum[a, b] => Tuple.Concat[StratumList[a], StratumList[b]]
+    case _         => Tuple1[T]
+
+  // Страты, накрытые уравнением, «выбиваются» в Zero.
+  type DropStrata[T <: FType, Affected <: Tuple] <: FType = T match
+    case Sum[a, b] => Sum[DropStrata[a, Affected], DropStrata[b, Affected]]
+    case _ =>
+      InStrata[Affected, T] match
+        case true  => Zero.type
+        case false => T
+
+  // Слипшиеся страты — это ОДНА страта классов, пронумерованных рекурсией,
+  // то есть Rec. Если уравнение не задело ни одной страты, ничего не меняется.
+  type MergeAffected[T <: FType, Affected <: Tuple] <: FType =
+    IsSame[DropStrata[T, Affected], T] match
+      case true  => T
+      case false => Sum[Simplify[DropStrata[T, Affected]], Rec.type]
+
+  type MergeEq[T <: FType, E, RecBody <: FType] <: FType = E match
+    case Eq[l, r] =>
+      MergeAffected[
+        T,
+        Tuple.Concat[
+          StratumList[Distribute[PatternStrata[l, RecBody]]],
+          StratumList[Distribute[PatternStrata[r, RecBody]]]
+        ]
+      ]
+
+  type MergeIdentified[T <: FType, Eqs <: Tuple, RecBody <: FType] <: FType = Eqs match
+    case EmptyTuple => T
+    case h *: t     => MergeIdentified[MergeEq[T, h, RecBody], t, RecBody]
+
+  // ----- 6.4. Проверка «получился тот же рекурсивный тип» -------------------
+
+  type FixCheck[T <: FType, RecBody <: FType] <: FType =
+    IsSame[T, RecBody] match
+      case true  => Rec.type
+      case false => T
+
   // =========================================================================
-  // 5.5. УНИВЕРСАЛЬНАЯ ТРАНСЛЯЦИЯ FType <-> РЕАЛЬНЫЙ ТИП
+  // 6.5. УНИВЕРСАЛЬНАЯ ТРАНСЛЯЦИЯ FType <-> РЕАЛЬНЫЙ ТИП
   // =========================================================================
 
   // Универсальный оператор неподвижной точки. Рекурсивные типы
   // (Nat, списки, деревья, ...) выражаются через него:
   //     type NatBody[X] = Either[Unit, X]
   //     type Nat     = Fix[NatBody]
-  // Никаких конкретных Nat/Sub здесь нет.
+  // Конкретных Nat здесь нет: есть только Fix и операторы-конструкторы ниже.
   case class Fix[F[_]](unfix: F[Fix[F]])
 
   // Перевод реального типа в фантомный FType.
   // Параметр Self — «якорь» для распознавания себя внутри рекурсивного тела:
   // встреча с Self -> Rec.type, остальное — структурно.
   // Для Fix[F] разворачиваем один слой: F[Fix[F]] при Self = Fix[F].
-  // Никаких Nat/Sub — только универсальные типы и Fix.
+  // Никаких конкретных Nat и никаких типов-конструкторов операций: только
+  // универсальные типы. Пара (a, b) — это ПРОИЗВЕДЕНИЕ, и этим всё сказано.
   type ToFType[T] = ToFTypeSelf[T, Nothing]
 
   type ToFTypeSelf[T, Self] <: FType = IsSame[T, Self] match
@@ -345,12 +462,10 @@ object factorisation:
     case Prod[a, b] => (FromFType[a, RecType], FromFType[b, RecType])
 
   // Итоговый оператор: реальный тип -> FType -> факторизация -> реальный тип.
-  // RecBody автоматически получается как ToFType[RecType].
+  // RecBody автоматически получается как ToFType[RecType]; никакого выбора
+  // «алгебры по операции» нет — алгебра выводится из самих уравнений.
   type RealQuotient[Init, RecType, Eqs <: Tuple] =
-    FromFType[
-      ReassocSum[QuotientType[ToFType[Init], ToFType[RecType], Eqs]],
-      RecType
-    ]
+    FromFType[ReassocSum[QuotientType[ToFType[Init], ToFType[RecType], Eqs]], RecType]
 
   object test:
     // =========================================================================
@@ -378,26 +493,52 @@ object factorisation:
     type BoolType = QuotientType[NatF, NatF, Mod2Eqs]
     summon[BoolType =:= Sum[One.type, One.type]]
 
-
     // =========================================================================
-    // ТЕСТ 3: факторизация реального типа (Nat, Nat) по уравнению
-    //         (S a, S b) ~ (a, b).  Sub задаётся как кортеж (универсально,
-    //         без правок ToFType):
+    // ТЕСТ 3 и ТЕСТ 4: реальные типы операций.
+    //
+    // Sub и Add — ОБЫЧНЫЕ ПАРЫ значений. На уровне типов между ними вообще нет
+    // разницы (оба — (A, B), то есть произведение): различие задают только
+    // УРАВНЕНИЯ. Поэтому универсальный оператор выше физически не может
+    // «узнать» Add — для него это ровно то же, что Sub.
     // =========================================================================
     type NatBody[X] = Either[Unit, X]
     type Nat        = Fix[NatBody]
 
-    type Sub[A, B] = (A, B)          // имя операции — просто синоним кортежа
+    type Sub[A, B] = (A, B)
+    type Add[A, B] = (A, B)
 
-    type RealResult = RealQuotient[Sub[Nat, Nat], Nat, SubEqs]
-    summon[RealResult =:= Option[(Boolean, Nat)]]
-//
-//    type AddEqs = Tuple1[
-//      Eq[
-//        PairT[S_T[Var["a"]], Var["b"]],
-//        PairT[Var["a"], S_T[Var["b"]]]
-//      ]
-//    ]
-//    type RealResult2 = RealQuotient[Sub[Nat, Nat], Nat, AddEqs]
-//    summon[RealResult2 =:= Nat]
-//    
+    // Универсальность: Add и Sub — один и тот же тип.
+    summon[Add[Nat, Nat] =:= Sub[Nat, Nat]]
+
+    // ТЕСТ 3: замыкание по ВЫЧИТАНИЮ  (S a, S b) ~ (a, b).
+    // Уравнение ориентируемо (вес 4 > 2), поэтому работает вычитание стран:
+    //   (1 + R)·(1 + R) = 1 + R + R + R·R --[вычесть R·R]--> 1 + 2·R.
+    // Классы: [(0,0)], [(m,0)], [(0,n)]  =>  Z = Option[(Boolean, Nat)].
+    type RealSubResult = RealQuotient[Sub[Nat, Nat], Nat, SubEqs]
+    summon[RealSubResult =:= Option[(Boolean, Nat)]]
+
+    // ТЕСТ 4: замыкание Nat по СЛОЖЕНИЮ:  (S a, b) ~ (a, S b),
+    //         то есть (m + 1) + n = m + (n + 1).
+    // Веса частей равны (4 = 4), уравнение НЕ ориентируемо => это симметрия:
+    // страты не вычитаются, а отождествляются:
+    //   страты левой части : {Rec·1, Rec·Rec}
+    //   страты правой части: {1·Rec, Rec·Rec}
+    //   => Rec·1, 1·Rec и Rec·Rec слипаются в одну страту Rec,
+    //      страта 1 («ноль + ноль») не задета.
+    //   (1 + R)·(1 + R)  -->  1 + Rec  =  RecBody  -->  Nat.
+    // Новых чисел сложение не порождает: замыкание Nat по сложению — это Nat.
+    type AddEqs = Tuple1[
+      Eq[
+        PairT[S_T[Var["a"]], Var["b"]],
+        PairT[Var["a"], S_T[Var["b"]]]
+      ]
+    ]
+
+    type RealAddResult = RealQuotient[Add[Nat, Nat], Nat, AddEqs]
+    summon[RealAddResult =:= Nat]
+
+    // Промежуточные проверки на уровне FType:
+    // слияние дало ровно тело рекурсии => это сама рекурсия (Rec);
+    summon[QuotientType[Prod[NatF, NatF], NatF, AddEqs] =:= Rec.type]
+    // факторизация Nat по пустому набору уравнений — тоже Nat (а не Option[Nat]).
+    summon[QuotientType[NatF, NatF, EmptyTuple] =:= Rec.type]
