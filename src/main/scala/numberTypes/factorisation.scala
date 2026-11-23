@@ -504,11 +504,8 @@ object factorisation:
     type NatBody[X] = Either[Unit, X]
     type Nat        = Fix[NatBody]
 
-    type Sub[A, B] = (A, B)
-    type Add[A, B] = (A, B)
-
-    // Универсальность: Add и Sub — один и тот же тип.
-    summon[Add[Nat, Nat] =:= Sub[Nat, Nat]]
+    opaque type Sub[A, B] <: (A, B) = (A, B)
+    opaque type Add[A, B] <: (A, B) = (A, B)
 
     // ТЕСТ 3: замыкание по ВЫЧИТАНИЮ  (S a, S b) ~ (a, b).
     // Уравнение ориентируемо (вес 4 > 2), поэтому работает вычитание стран:
@@ -542,3 +539,13 @@ object factorisation:
     summon[QuotientType[Prod[NatF, NatF], NatF, AddEqs] =:= Rec.type]
     // факторизация Nat по пустому набору уравнений — тоже Nat (а не Option[Nat]).
     summon[QuotientType[NatF, NatF, EmptyTuple] =:= Rec.type]
+
+
+//    infix type /~[T, Eqs <: Tuple] = ???
+//    
+//    type NN = Fix[[X] =>> Either[Nat, Add[X, X]]] /~ AddEqs
+//    summon[Nat =:= NN]
+//    
+//    type Z = Fix[[X] =>> Either[Nat, Sub[X, X]]] /~ SubEqs
+//    summon[Z =:= Option[(Boolean, Nat)]]
+    
