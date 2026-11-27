@@ -12,6 +12,9 @@
         <Execute>
           <option name="pattern" value="java -version 2&gt;&amp;1" />
         </Execute>
+        <Execute>
+          <option name="pattern" value="..toolsbuild.cmd compile *" />
+        </Execute>
       </list>
     </option>
   </component>
